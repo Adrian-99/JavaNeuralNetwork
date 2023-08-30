@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.github.adrian99'
-version = '1.0-SNAPSHOT'
+version = 'unspecified'
 
 repositories {
     mavenCentral()

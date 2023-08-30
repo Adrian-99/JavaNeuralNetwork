@@ -1,2 +1,4 @@
 rootProject.name = 'Java-Neural-Network'
+include 'gui'
+include 'network'
 
