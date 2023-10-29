@@ -2,9 +2,8 @@ package com.github.adrian99.neuralnetwork.layer.neuron;
 
 import com.github.adrian99.neuralnetwork.layer.NeuralNetworkLayer;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
-
-import java.util.Arrays;
 
 public class Neuron {
     private final int index;
@@ -16,12 +15,17 @@ public class Neuron {
     private NeuralNetworkLayer previousLayer;
     private NeuralNetworkLayer nextLayer;
 
-    public Neuron(int index, int inputsCount, ActivationFunction activationFunction) {
+    public Neuron(int index,
+                  int inputsCount,
+                  ActivationFunction activationFunction,
+                  WeightInitializationFunction weightInitializationFunction) {
         this.index = index;
         this.activationFunction = activationFunction;
         this.weights = new double[inputsCount];
-        Arrays.fill(weights, 1.0);
-        bias = 1.0;
+        for (var i = 0; i < inputsCount; i++) {
+            weights[i] = weightInitializationFunction.getNextValue();
+        }
+        bias = weightInitializationFunction.getNextValue();
     }
 
     public void setPreviousLayer(NeuralNetworkLayer layer) {

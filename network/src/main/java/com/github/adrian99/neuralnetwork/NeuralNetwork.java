@@ -2,10 +2,14 @@ package com.github.adrian99.neuralnetwork;
 
 import com.github.adrian99.neuralnetwork.layer.NeuralNetworkLayer;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+
+import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
 public class NeuralNetwork {
     private final NeuralNetworkLayer[] layers;
@@ -29,11 +33,14 @@ public class NeuralNetwork {
                                  ErrorFunction errorFunction,
                                  double learningRate) {
         if (inputSets.length == targetOutputSets.length) {
-            for (var i = 0; i < inputSets.length; i++) {
-                activate(inputSets[i]);
-                calculateNeuronErrors(errorFunction, targetOutputSets[i]);
-                calculateNewNeuronWeights(learningRate, inputSets[i]);
-            }
+            IntStream.range(0, inputSets.length)
+                    .boxed()
+                    .collect(toShuffledList())
+                    .forEach(i -> {
+                        activate(inputSets[i]);
+                        calculateNeuronErrors(errorFunction, targetOutputSets[i]);
+                        calculateNewNeuronWeights(learningRate, inputSets[i]);
+                    });
         } else {
             throw new IllegalArgumentException("Input sets and target output sets counts mismatch: " + inputSets.length + " != " + targetOutputSets.length);
         }
@@ -78,14 +85,24 @@ public class NeuralNetwork {
             layers = new ArrayList<>();
         }
 
-        public Builder addLayer(int neuronsCount, ActivationFunction activationFunction) {
-            layers.add(new NeuralNetworkLayer(neuronsCount, nextLayerInputsCount, activationFunction));
+        public Builder addLayer(int neuronsCount,
+                                ActivationFunction activationFunction,
+                                WeightInitializationFunction weightInitializationFunction) {
+            weightInitializationFunction.calculateBounds(nextLayerInputsCount, neuronsCount);
+            layers.add(new NeuralNetworkLayer(
+                    neuronsCount,
+                    nextLayerInputsCount,
+                    activationFunction,
+                    weightInitializationFunction
+            ));
             nextLayerInputsCount = neuronsCount;
             return this;
         }
 
-        public NeuralNetwork addFinalLayer(ActivationFunction activationFunction) {
-            addLayer(networkOutputsCount, activationFunction);
+        public NeuralNetwork addFinalLayer(ActivationFunction activationFunction,
+                                           WeightInitializationFunction weightInitializationFunction) {
+            weightInitializationFunction.calculateBounds(nextLayerInputsCount, networkOutputsCount);
+            addLayer(networkOutputsCount, activationFunction, weightInitializationFunction);
             return new NeuralNetwork(layers.toArray(NeuralNetworkLayer[]::new));
         }
     }

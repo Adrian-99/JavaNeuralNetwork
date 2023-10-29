@@ -2,6 +2,7 @@ package com.github.adrian99.neuralnetwork.layer;
 
 import com.github.adrian99.neuralnetwork.layer.neuron.Neuron;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
 
 public class NeuralNetworkLayer {
@@ -9,10 +10,13 @@ public class NeuralNetworkLayer {
     private boolean hasPreviousLayer;
     private boolean hasNextLayer;
 
-    public NeuralNetworkLayer(int neuronsCount, int inputsCount, ActivationFunction activationFunction) {
+    public NeuralNetworkLayer(int neuronsCount,
+                              int inputsCount,
+                              ActivationFunction activationFunction,
+                              WeightInitializationFunction weightInitializationFunction) {
         neurons = new Neuron[neuronsCount];
         for (var i = 0; i < neuronsCount; i++) {
-            neurons[i] = new Neuron(i, inputsCount, activationFunction);
+            neurons[i] = new Neuron(i, inputsCount, activationFunction, weightInitializationFunction);
         }
     }
 

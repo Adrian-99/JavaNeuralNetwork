@@ -2,6 +2,7 @@ package com.github.adrian99.neuralnetwork;
 
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LogisticActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.SumSquaredErrorFunction;
 
@@ -51,15 +52,16 @@ public class Main {
         };
 
         var activationFunction = new LogisticActivationFunction(5);
+        var weightInitializationFunction = new NormalizedXavierWeightInitializationFunction();
         var errorFunction = new SumSquaredErrorFunction();
         var network = new NeuralNetwork.Builder(2, 1)
-                .addLayer(4, activationFunction)
-                .addFinalLayer(activationFunction);
+                .addLayer(4, activationFunction, weightInitializationFunction)
+                .addFinalLayer(activationFunction, weightInitializationFunction);
 
         var outputs = network.activate(inputs);
         System.out.println("ERR: " + calculateTotalError(errorFunction, outputs, target));
 
-        for (var i = 0; i < 100000; i++) {
+        for (var i = 0; i < 1000000; i++) {
             network.learnSingleEpoch(inputs, target, errorFunction, 20000.0);
         }
 
