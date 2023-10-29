@@ -18,4 +18,9 @@ public class LogisticActivationFunction implements ActivationFunction {
     public double apply(double input) {
         return supremum / (1 + Math.exp(-growthRate * input));
     }
+
+    @Override
+    public double applyDerivative(double output) {
+        return output * (1 - output);
+    }
 }

@@ -9,4 +9,9 @@ public class UnitStepActivationFunction implements ActivationFunction {
             return 0.0;
         }
     }
+
+    @Override
+    public double applyDerivative(double output) {
+        return output;
+    }
 }

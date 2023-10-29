@@ -18,4 +18,9 @@ public class LinearActivationFunction implements ActivationFunction {
     public double apply(double input) {
         return slope * input + intercept;
     }
+
+    @Override
+    public double applyDerivative(double output) {
+        return slope;
+    }
 }
