@@ -21,6 +21,6 @@ public class LogisticActivationFunction implements ActivationFunction {
 
     @Override
     public double applyDerivative(double output) {
-        return output * (1 - output);
+        return growthRate * output * (1 - output);
     }
 }

@@ -1,15 +1,20 @@
 package com.github.adrian99.neuralnetwork;
 
+import com.github.adrian99.neuralnetwork.data.csv.CsvDataLoader;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LogisticActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.errorfunction.SumSquaredErrorFunction;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Map;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws URISyntaxException, IOException {
 //        var input = new double[] { 15.7543, 4347.5345, 1.6747, -35.45, 0.7658 };
 //
 //        var activationFunction = new LinearActivationFunction(2.0);
@@ -38,35 +43,40 @@ public class Main {
 //        System.out.println("TARGET:");
 //        printArray2D(target);
 
-        var inputs = new double[][] {
-                new double[] { 0, 0 },
-                new double[] { 0, 1 },
-                new double[] { 1, 0 },
-                new double[] { 1, 1 }
-        };
-        var target = new double[][] {
-                new double[] { 0 },
-                new double[] { 1 },
-                new double[] { 1 },
-                new double[] { 0 }
-        };
+        var numericData = new CsvDataLoader(new File(Main.class.getClassLoader().getResource("datasets/iris/iris.data").toURI()))
+                .mapColumn(4, Map.of("Iris-setosa", "1", "Iris-versicolor", "2", "Iris-virginica", "3"))
+                .toNumericData()
+                .normalize(0)
+                .normalize(1)
+                .normalize(2)
+                .normalize(3);
+        var inputs = numericData.toArray(0, 3);
+        var target = numericData.toArray(4, 4);
 
         var activationFunction = new LogisticActivationFunction(5);
         var weightInitializationFunction = new NormalizedXavierWeightInitializationFunction();
         var errorFunction = new SumSquaredErrorFunction();
-        var network = new NeuralNetwork.Builder(2, 1)
-                .addLayer(4, activationFunction, weightInitializationFunction)
-                .addFinalLayer(activationFunction, weightInitializationFunction);
+        var network = new NeuralNetwork.Builder(4, 1)
+//                .addLayer(4, activationFunction, weightInitializationFunction)
+                .addLayer(2, activationFunction, weightInitializationFunction)
+                .addFinalLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
+//                .addFinalLayer(activationFunction, weightInitializationFunction);
 
         var outputs = network.activate(inputs);
-        System.out.println("ERR: " + calculateTotalError(errorFunction, outputs, target));
+        var error = calculateTotalError(errorFunction, outputs, target);
+        System.out.println("ERR: " + error);
 
-        for (var i = 0; i < 1000000; i++) {
-            network.learnSingleEpoch(inputs, target, errorFunction, 20000.0);
+        while (error > 1) {
+//        while (true) {
+            for (var i = 0; i < 10; i++) {
+                network.learnSingleEpoch(inputs, target, errorFunction, 1.5);
+            }
+            outputs = network.activate(inputs);
+            error = calculateTotalError(errorFunction, outputs, target);
+            System.out.println("ERR: " + error);
         }
 
-        outputs = network.activate(inputs);
-        System.out.println("ERR: " + calculateTotalError(errorFunction, outputs, target));
+
         printArray2D(outputs);
     }
 
