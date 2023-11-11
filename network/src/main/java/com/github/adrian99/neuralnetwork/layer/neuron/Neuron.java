@@ -1,9 +1,10 @@
 package com.github.adrian99.neuralnetwork.layer.neuron;
 
 import com.github.adrian99.neuralnetwork.layer.NeuralNetworkLayer;
-import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
-import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
+import com.github.adrian99.neuralnetwork.learning.LearningFunction;
+import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 
 public class Neuron {
     private final int index;
@@ -74,25 +75,29 @@ public class Neuron {
         error *= activationFunction.applyDerivative(output);
     }
 
-    public void calculateNewWeights(double learningRate) {
+    public void calculateNewWeights(LearningFunction learningFunction) {
         for (var previousNeuron : previousLayer.getNeurons()) {
-            weights[previousNeuron.index] -= learningRate * error * previousNeuron.output;
+            weights[previousNeuron.index] = learningFunction.calculateNewWeight(
+                    weights[previousNeuron.index],
+                    error,
+                    previousNeuron.output
+            );
         }
-        bias -= learningRate * error;
+        bias = learningFunction.calculateNewBias(bias, error);
     }
 
-    public void calculateNewWeights(double learningRate, double[] inputs) {
+    public void calculateNewWeights(LearningFunction learningFunction, double[] inputs) {
         if (previousLayer == null) {
             if (inputs.length == weights.length) {
                 for (var i = 0; i < weights.length; i++) {
-                    weights[i] -= (learningRate * error * inputs[i]);
+                    weights[i] = learningFunction.calculateNewWeight(weights[i], error, inputs[i]);
                 }
-                bias -= learningRate * error;
+                bias = learningFunction.calculateNewBias(bias, error);
             } else {
                 throw new IllegalArgumentException("Neuron inputs count mismatch: expected " + weights.length + ", received " + inputs.length);
             }
         } else {
-            calculateNewWeights(learningRate);
+            calculateNewWeights(learningFunction);
         }
     }
 }

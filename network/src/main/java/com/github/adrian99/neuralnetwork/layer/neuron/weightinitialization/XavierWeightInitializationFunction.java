@@ -1,13 +1,13 @@
-package com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction;
+package com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization;
 
 import java.util.Random;
 
-public class NormalizedXavierWeightInitializationFunction implements WeightInitializationFunction {
+public class XavierWeightInitializationFunction implements WeightInitializationFunction {
     private final Random random;
     private double lowerBound;
     private double upperBound;
 
-    public NormalizedXavierWeightInitializationFunction() {
+    public XavierWeightInitializationFunction() {
         random = new Random();
         lowerBound = -1;
         upperBound = 1;
@@ -15,7 +15,7 @@ public class NormalizedXavierWeightInitializationFunction implements WeightIniti
 
     @Override
     public void calculateBounds(int inputsCount, int neuronsInLayerCount) {
-        upperBound = Math.sqrt(6) / Math.sqrt(inputsCount + neuronsInLayerCount);
+        upperBound = 1 / Math.sqrt(inputsCount);
         lowerBound = -upperBound;
     }
 

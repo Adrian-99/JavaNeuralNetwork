@@ -1,9 +1,10 @@
 package com.github.adrian99.neuralnetwork;
 
 import com.github.adrian99.neuralnetwork.layer.NeuralNetworkLayer;
-import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
-import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
+import com.github.adrian99.neuralnetwork.learning.LearningFunction;
+import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class NeuralNetwork {
     public void learnSingleEpoch(double[][] inputSets,
                                  double[][] targetOutputSets,
                                  ErrorFunction errorFunction,
-                                 double learningRate) {
+                                 LearningFunction learningFunction) {
         if (inputSets.length == targetOutputSets.length) {
             IntStream.range(0, inputSets.length)
                     .boxed()
@@ -39,7 +40,7 @@ public class NeuralNetwork {
                     .forEach(i -> {
                         activate(inputSets[i]);
                         calculateNeuronErrors(errorFunction, targetOutputSets[i]);
-                        calculateNewNeuronWeights(learningRate, inputSets[i]);
+                        calculateNewNeuronWeights(learningFunction, inputSets[i]);
                     });
         } else {
             throw new IllegalArgumentException("Input sets and target output sets counts mismatch: " + inputSets.length + " != " + targetOutputSets.length);
@@ -68,9 +69,9 @@ public class NeuralNetwork {
         }
     }
 
-    public void calculateNewNeuronWeights(double learningRate, double[] inputs) {
+    public void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs) {
         for (var layer : layers) {
-            layer.calculateNewNeuronWeights(learningRate, inputs);
+            layer.calculateNewNeuronWeights(learningFunction, inputs);
         }
     }
 

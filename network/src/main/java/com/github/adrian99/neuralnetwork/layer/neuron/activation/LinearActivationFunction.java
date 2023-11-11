@@ -1,4 +1,4 @@
-package com.github.adrian99.neuralnetwork.layer.neuron.activationfunction;
+package com.github.adrian99.neuralnetwork.layer.neuron.activation;
 
 public class LinearActivationFunction implements ActivationFunction {
     private final double slope;

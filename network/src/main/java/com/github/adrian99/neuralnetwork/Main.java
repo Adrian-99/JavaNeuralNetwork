@@ -1,11 +1,12 @@
 package com.github.adrian99.neuralnetwork;
 
 import com.github.adrian99.neuralnetwork.data.csv.CsvDataLoader;
-import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LinearActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.LogisticActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.NormalizedXavierWeightInitializationFunction;
-import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
-import com.github.adrian99.neuralnetwork.learning.errorfunction.SumSquaredErrorFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
+import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
+import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
+import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class Main {
         var activationFunction = new LogisticActivationFunction(5);
         var weightInitializationFunction = new NormalizedXavierWeightInitializationFunction();
         var errorFunction = new SumSquaredErrorFunction();
+        var learningFunction = new BackPropagationLearningFunction(1.5);
         var network = new NeuralNetwork.Builder(4, 1)
 //                .addLayer(4, activationFunction, weightInitializationFunction)
                 .addLayer(2, activationFunction, weightInitializationFunction)
@@ -69,7 +71,7 @@ public class Main {
         while (error > 1) {
 //        while (true) {
             for (var i = 0; i < 10; i++) {
-                network.learnSingleEpoch(inputs, target, errorFunction, 1.5);
+                network.learnSingleEpoch(inputs, target, errorFunction, learningFunction);
             }
             outputs = network.activate(inputs);
             error = calculateTotalError(errorFunction, outputs, target);

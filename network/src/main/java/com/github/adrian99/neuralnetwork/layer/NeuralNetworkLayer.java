@@ -1,9 +1,10 @@
 package com.github.adrian99.neuralnetwork.layer;
 
 import com.github.adrian99.neuralnetwork.layer.neuron.Neuron;
-import com.github.adrian99.neuralnetwork.layer.neuron.activationfunction.ActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.weightinitializationfunction.WeightInitializationFunction;
-import com.github.adrian99.neuralnetwork.learning.errorfunction.ErrorFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
+import com.github.adrian99.neuralnetwork.learning.LearningFunction;
+import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 
 public class NeuralNetworkLayer {
     private final Neuron[] neurons;
@@ -44,9 +45,9 @@ public class NeuralNetworkLayer {
         }
     }
 
-    public void calculateNewNeuronWeights(double learningRate, double[] inputs) {
+    public void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs) {
         for (var neuron : neurons) {
-            neuron.calculateNewWeights(learningRate, inputs);
+            neuron.calculateNewWeights(learningFunction, inputs);
         }
     }
 

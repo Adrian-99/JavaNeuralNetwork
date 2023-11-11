@@ -1,4 +1,4 @@
-package com.github.adrian99.neuralnetwork.learning.errorfunction;
+package com.github.adrian99.neuralnetwork.learning.error;
 
 public class SumSquaredErrorFunction implements ErrorFunction {
     @Override

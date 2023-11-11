@@ -1,4 +1,4 @@
-package com.github.adrian99.neuralnetwork.layer.neuron.activationfunction;
+package com.github.adrian99.neuralnetwork.layer.neuron.activation;
 
 public class LogisticActivationFunction implements ActivationFunction {
     private final double supremum;
