@@ -1,6 +1,9 @@
 package com.github.adrian99.neuralnetwork;
 
-import com.github.adrian99.neuralnetwork.layer.NeuralNetworkLayer;
+import com.github.adrian99.neuralnetwork.layer.HiddenNeuronsLayer;
+import com.github.adrian99.neuralnetwork.layer.InputNeuronsLayer;
+import com.github.adrian99.neuralnetwork.layer.OutputNeuronsLayer;
+import com.github.adrian99.neuralnetwork.layer.SingleNeuronsLayer;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
@@ -12,22 +15,12 @@ import java.util.stream.IntStream;
 
 import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
-public class NeuralNetwork {
-    private final NeuralNetworkLayer[] layers;
+public abstract class NeuralNetwork {
+    public abstract double[] activate(double[] inputs);
 
-    public NeuralNetwork(NeuralNetworkLayer... layers) {
-        this.layers = layers;
-        if (layers.length > 1) {
-            layers[0].setPreviousLayer(null);
-            layers[0].setNextLayer(layers[1]);
-            layers[layers.length - 1].setPreviousLayer(layers[layers.length - 2]);
-            layers[layers.length - 1].setNextLayer(null);
-            for (var i = 1; i < layers.length - 1; i++) {
-                layers[i].setPreviousLayer(layers[i - 1]);
-                layers[i].setNextLayer(layers[i + 1]);
-            }
-        }
-    }
+    protected abstract void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs);
+
+    protected abstract void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs);
 
     public void learnSingleEpoch(double[][] inputSets,
                                  double[][] targetOutputSets,
@@ -47,14 +40,6 @@ public class NeuralNetwork {
         }
     }
 
-    public double[] activate(double[] inputs) {
-        var results = inputs;
-        for (var layer : layers) {
-            results = layer.activate(results);
-        }
-        return results;
-    }
-
     public double[][] activate(double[][] inputSets) {
         var results = new double[inputSets.length][];
         for (var i = 0; i < inputSets.length; i++) {
@@ -63,48 +48,61 @@ public class NeuralNetwork {
         return results;
     }
 
-    public void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs) {
-        for (var i = layers.length - 1; i >= 0; i--) {
-            layers[i].calculateNeuronErrors(errorFunction, targetOutputs);
-        }
-    }
-
-    public void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs) {
-        for (var layer : layers) {
-            layer.calculateNewNeuronWeights(learningFunction, inputs);
-        }
-    }
-
     public static class Builder {
         private final int networkOutputsCount;
-        private final List<NeuralNetworkLayer> layers;
+        private final List<HiddenNeuronsLayer> hiddenLayers;
+        private InputNeuronsLayer inputLayer = null;
         private int nextLayerInputsCount;
 
         public Builder(int networkInputsCount, int networkOutputsCount) {
             this.networkOutputsCount = networkOutputsCount;
             nextLayerInputsCount = networkInputsCount;
-            layers = new ArrayList<>();
+            hiddenLayers = new ArrayList<>();
         }
 
         public Builder addLayer(int neuronsCount,
                                 ActivationFunction activationFunction,
                                 WeightInitializationFunction weightInitializationFunction) {
             weightInitializationFunction.calculateBounds(nextLayerInputsCount, neuronsCount);
-            layers.add(new NeuralNetworkLayer(
-                    neuronsCount,
-                    nextLayerInputsCount,
-                    activationFunction,
-                    weightInitializationFunction
-            ));
+            if (inputLayer != null) {
+                hiddenLayers.add(new HiddenNeuronsLayer(
+                        neuronsCount,
+                        nextLayerInputsCount,
+                        activationFunction,
+                        weightInitializationFunction
+                ));
+            } else {
+                inputLayer = new InputNeuronsLayer(
+                        neuronsCount,
+                        nextLayerInputsCount,
+                        activationFunction,
+                        weightInitializationFunction
+                );
+            }
             nextLayerInputsCount = neuronsCount;
             return this;
         }
 
-        public NeuralNetwork addFinalLayer(ActivationFunction activationFunction,
-                                           WeightInitializationFunction weightInitializationFunction) {
+        public NeuralNetwork addOutputLayer(ActivationFunction activationFunction,
+                                            WeightInitializationFunction weightInitializationFunction) {
             weightInitializationFunction.calculateBounds(nextLayerInputsCount, networkOutputsCount);
-            addLayer(networkOutputsCount, activationFunction, weightInitializationFunction);
-            return new NeuralNetwork(layers.toArray(NeuralNetworkLayer[]::new));
+            if (inputLayer != null) {
+                var outputLayer = new OutputNeuronsLayer(
+                        networkOutputsCount,
+                        nextLayerInputsCount,
+                        activationFunction,
+                        weightInitializationFunction
+                );
+                return new MultiLayerNeuralNetwork(inputLayer, outputLayer, hiddenLayers.toArray(HiddenNeuronsLayer[]::new));
+            } else {
+                var layer = new SingleNeuronsLayer(
+                        networkOutputsCount,
+                        nextLayerInputsCount,
+                        activationFunction,
+                        weightInitializationFunction
+                );
+                return new SingleLayerNeuralNetwork(layer);
+            }
         }
     }
 }

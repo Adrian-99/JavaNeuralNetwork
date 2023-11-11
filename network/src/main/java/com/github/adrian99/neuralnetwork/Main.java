@@ -61,7 +61,7 @@ public class Main {
         var network = new NeuralNetwork.Builder(4, 1)
 //                .addLayer(4, activationFunction, weightInitializationFunction)
                 .addLayer(2, activationFunction, weightInitializationFunction)
-                .addFinalLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
+                .addOutputLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
 //                .addFinalLayer(activationFunction, weightInitializationFunction);
 
         var outputs = network.activate(inputs);
