@@ -6,7 +6,9 @@ import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.Weigh
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 
-public abstract class Neuron {
+import java.io.Serializable;
+
+public abstract class Neuron implements Serializable {
     protected final int index;
     protected final ActivationFunction activationFunction;
     protected final double[] weights;

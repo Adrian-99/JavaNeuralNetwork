@@ -9,13 +9,14 @@ import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.Weigh
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
-public abstract class NeuralNetwork {
+public abstract class NeuralNetwork implements Serializable {
     public abstract double[] activate(double[] inputs);
 
     protected abstract void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs);
