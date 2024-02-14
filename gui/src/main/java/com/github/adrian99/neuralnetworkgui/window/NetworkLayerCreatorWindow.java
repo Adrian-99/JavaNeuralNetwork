@@ -48,7 +48,7 @@ public class NetworkLayerCreatorWindow extends JDialog {
     public NetworkLayerCreatorWindow(NetworkLayerData networkLayerData, Consumer<NetworkLayerData> onSave) {
         this.onSave = onSave;
 
-        setTitle("Create new neural network");
+        setTitle("Create new neural network layer");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);
 

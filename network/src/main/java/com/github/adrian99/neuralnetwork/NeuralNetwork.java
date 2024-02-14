@@ -1,9 +1,6 @@
 package com.github.adrian99.neuralnetwork;
 
-import com.github.adrian99.neuralnetwork.layer.HiddenNeuronsLayer;
-import com.github.adrian99.neuralnetwork.layer.InputNeuronsLayer;
-import com.github.adrian99.neuralnetwork.layer.OutputNeuronsLayer;
-import com.github.adrian99.neuralnetwork.layer.SingleNeuronsLayer;
+import com.github.adrian99.neuralnetwork.layer.*;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
@@ -17,6 +14,7 @@ import java.util.stream.IntStream;
 import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
 public abstract class NeuralNetwork implements Serializable {
+    public abstract NeuronsLayer[] getLayers();
     public abstract double[] activate(double[] inputs);
 
     protected abstract void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs);

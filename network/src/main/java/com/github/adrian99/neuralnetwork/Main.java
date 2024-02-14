@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class Main {
+    @SuppressWarnings("java:S106")
     public static void main(String[] args) throws URISyntaxException, IOException {
 //        var input = new double[] { 15.7543, 4347.5345, 1.6747, -35.45, 0.7658 };
 //
@@ -54,32 +55,27 @@ public class Main {
         var inputs = numericData.toArray(0, 3);
         var target = numericData.toArray(4, 4);
 
-        var activationFunction = new LogisticActivationFunction(5);
         var weightInitializationFunction = new NormalizedXavierWeightInitializationFunction();
+        var network = new NeuralNetwork.Builder(4, 1)
+                .addLayer(2, new LogisticActivationFunction(5), weightInitializationFunction)
+                .addOutputLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
+
+        double[][] outputs;
+        double error = 100;
         var errorFunction = new SumSquaredErrorFunction();
         var learningFunction = new BackPropagationLearningFunction(1.5);
-        var network = new NeuralNetwork.Builder(4, 1)
-//                .addLayer(4, activationFunction, weightInitializationFunction)
-                .addLayer(2, activationFunction, weightInitializationFunction)
-                .addOutputLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
-//                .addFinalLayer(activationFunction, weightInitializationFunction);
 
-        var outputs = network.activate(inputs);
-        var error = calculateTotalError(errorFunction, outputs, target);
-        System.out.println("ERR: " + error);
-
-        while (error > 1) {
-//        while (true) {
+        for (var epoch = 0; error > 1; epoch += 10) {
+            outputs = network.activate(inputs);
+            error = calculateTotalError(errorFunction, outputs, target);
+            System.out.println("Epoch: " + epoch + "; error: " + error);
             for (var i = 0; i < 10; i++) {
                 network.learnSingleEpoch(inputs, target, errorFunction, learningFunction);
             }
-            outputs = network.activate(inputs);
-            error = calculateTotalError(errorFunction, outputs, target);
-            System.out.println("ERR: " + error);
         }
 
 
-        printArray2D(outputs);
+//        printArray2D(outputs);
     }
 
     private static void printArray2D(double[][] array) {

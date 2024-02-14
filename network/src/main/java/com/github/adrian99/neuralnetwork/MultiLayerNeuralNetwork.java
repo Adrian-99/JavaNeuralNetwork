@@ -2,6 +2,7 @@ package com.github.adrian99.neuralnetwork;
 
 import com.github.adrian99.neuralnetwork.layer.HiddenNeuronsLayer;
 import com.github.adrian99.neuralnetwork.layer.InputNeuronsLayer;
+import com.github.adrian99.neuralnetwork.layer.NeuronsLayer;
 import com.github.adrian99.neuralnetwork.layer.OutputNeuronsLayer;
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
@@ -37,6 +38,15 @@ public class MultiLayerNeuralNetwork extends NeuralNetwork {
             inputLayer.setNextLayer(outputLayer);
             outputLayer.setPreviousLayer(inputLayer);
         }
+    }
+
+    @Override
+    public NeuronsLayer[] getLayers() {
+        var layers = new NeuronsLayer[hiddenLayers.length + 2];
+        layers[0] = inputLayer;
+        System.arraycopy(hiddenLayers, 0, layers, 1, hiddenLayers.length);
+        layers[hiddenLayers.length + 1] = outputLayer;
+        return layers;
     }
 
     @Override

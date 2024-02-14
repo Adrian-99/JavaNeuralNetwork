@@ -1,5 +1,6 @@
 package com.github.adrian99.neuralnetwork;
 
+import com.github.adrian99.neuralnetwork.layer.NeuronsLayer;
 import com.github.adrian99.neuralnetwork.layer.SingleNeuronsLayer;
 import com.github.adrian99.neuralnetwork.learning.LearningFunction;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
@@ -9,6 +10,11 @@ public class SingleLayerNeuralNetwork extends NeuralNetwork {
 
     public SingleLayerNeuralNetwork(SingleNeuronsLayer layer) {
         this.layer = layer;
+    }
+
+    @Override
+    public NeuronsLayer[] getLayers() {
+        return new NeuronsLayer[] { layer };
     }
 
     @Override

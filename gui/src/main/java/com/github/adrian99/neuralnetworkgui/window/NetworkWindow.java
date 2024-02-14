@@ -8,6 +8,7 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.UnitStepActivat
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
+import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -17,6 +18,7 @@ import java.util.List;
 
 public class NetworkWindow extends JFrame {
     private final JButton exportNetworkButton;
+    private final NetworkVisualizerComponent networkVisualizerComponent;
     private final JFileChooser fileChooser = new JFileChooser();
 
     private NeuralNetwork neuralNetwork = null;
@@ -41,6 +43,10 @@ public class NetworkWindow extends JFrame {
         topButtonsPanel.add(exportNetworkButton);
         updateExportNetworkButton();
 
+        networkVisualizerComponent = new NetworkVisualizerComponent();
+        networkVisualizerComponent.setPreferredSize(new Dimension(600, 300));
+        getContentPane().add(networkVisualizerComponent, BorderLayout.CENTER);
+
         setVisible(true);
         pack();
     }
@@ -63,6 +69,7 @@ public class NetworkWindow extends JFrame {
                     getActivationFunction(lastLayerData.activationFunctionClass(), lastLayerData.activationFunctionParameters()),
                     getWeightInitializationFunction(lastLayerData.weightInitializationFunctionClass())
             );
+            networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
 
             updateExportNetworkButton();
         });
@@ -73,6 +80,7 @@ public class NetworkWindow extends JFrame {
             var file = fileChooser.getSelectedFile();
             try (var objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
                 neuralNetwork = (NeuralNetwork) objectInputStream.readObject();
+                networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
             } catch (IOException | ClassNotFoundException e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),

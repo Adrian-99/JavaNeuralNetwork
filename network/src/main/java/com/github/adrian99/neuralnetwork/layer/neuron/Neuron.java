@@ -29,6 +29,14 @@ public abstract class Neuron implements Serializable {
         bias = weightInitializationFunction.getNextValue();
     }
 
+    public double[] getWeights() {
+        return weights;
+    }
+
+    public double getBias() {
+        return bias;
+    }
+
     public double getOutput() {
         return output;
     }
