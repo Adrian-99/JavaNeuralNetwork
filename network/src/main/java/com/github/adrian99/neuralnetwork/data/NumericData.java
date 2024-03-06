@@ -11,6 +11,10 @@ public class NumericData {
         this.columns = columns;
     }
 
+    public int getColumnsCount() {
+        return columns.size();
+    }
+
     public NumericData normalize(int columnIndex) {
         return normalize(columnIndex, -1, 1);
     }

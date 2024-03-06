@@ -1,6 +1,7 @@
 package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetwork.NeuralNetwork;
+import com.github.adrian99.neuralnetwork.data.csv.CsvDataLoader;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
@@ -18,10 +19,13 @@ import java.util.List;
 
 public class NetworkWindow extends JFrame {
     private final JButton exportNetworkButton;
+    private final JButton importDataButton;
     private final NetworkVisualizerComponent networkVisualizerComponent;
     private final JFileChooser fileChooser = new JFileChooser();
 
     private NeuralNetwork neuralNetwork = null;
+    private double[][] inputData;
+    private double[][] outputData;
 
     public NetworkWindow() {
         setTitle("Neural network");
@@ -41,7 +45,14 @@ public class NetworkWindow extends JFrame {
         exportNetworkButton = new JButton("Export network");
         exportNetworkButton.addActionListener(event -> onExportNetwork());
         topButtonsPanel.add(exportNetworkButton);
-        updateExportNetworkButton();
+
+        topButtonsPanel.add(new JSeparator(SwingConstants.VERTICAL));
+
+        importDataButton = new JButton("Import data");
+        importDataButton.addActionListener(event -> onImportData());
+        topButtonsPanel.add(importDataButton);
+
+        updateButtons();
 
         networkVisualizerComponent = new NetworkVisualizerComponent();
         networkVisualizerComponent.setPreferredSize(new Dimension(600, 300));
@@ -70,8 +81,10 @@ public class NetworkWindow extends JFrame {
                     getWeightInitializationFunction(lastLayerData.weightInitializationFunctionClass())
             );
             networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
+            inputData = null;
+            outputData = null;
 
-            updateExportNetworkButton();
+            updateButtons();
         });
     }
 
@@ -81,6 +94,8 @@ public class NetworkWindow extends JFrame {
             try (var objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
                 neuralNetwork = (NeuralNetwork) objectInputStream.readObject();
                 networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
+                inputData = null;
+                outputData = null;
             } catch (IOException | ClassNotFoundException e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),
@@ -89,7 +104,7 @@ public class NetworkWindow extends JFrame {
                         JOptionPane.ERROR_MESSAGE
                 );
             }
-            updateExportNetworkButton();
+            updateButtons();
         }
     }
 
@@ -131,7 +146,40 @@ public class NetworkWindow extends JFrame {
         }
     }
 
-    private void updateExportNetworkButton() {
+    private void updateButtons() {
         exportNetworkButton.setEnabled(neuralNetwork != null);
+        importDataButton.setEnabled(neuralNetwork != null);
+    }
+
+    private void onImportData() {
+        if (neuralNetwork != null && fileChooser.showOpenDialog(getContentPane()) == JFileChooser.APPROVE_OPTION) {
+            var file = fileChooser.getSelectedFile();
+            try {
+                var numericData = new CsvDataLoader(file).toNumericData();
+                var networkInputsCount = neuralNetwork.getLayers()[0].getNeurons()[0].getWeights().length;
+                var networkOutputsCount = neuralNetwork.getLayers()[neuralNetwork.getLayers().length - 1].getNeurons().length;
+                if (numericData.getColumnsCount() >= networkInputsCount + networkOutputsCount) {
+                    inputData = numericData.toArray(0, networkInputsCount - 1);
+                    outputData = numericData.toArray(networkInputsCount, networkInputsCount + networkOutputsCount - 1);
+                } else {
+                    JOptionPane.showMessageDialog(
+                            getContentPane(),
+                            "Not enough columns of data:\n" +
+                                    "Neural network has " + networkInputsCount + " inputs and " + networkOutputsCount + " outputs\n" +
+                                    "Expected at least " + (networkInputsCount + networkOutputsCount) + " columns of data, got " + numericData.getColumnsCount(),
+                            "Incorrect data error",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(
+                        getContentPane(),
+                        "Error occurred while importing data from file: " + e.getMessage(),
+                        "Importing error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+            updateButtons();
+        }
     }
 }
