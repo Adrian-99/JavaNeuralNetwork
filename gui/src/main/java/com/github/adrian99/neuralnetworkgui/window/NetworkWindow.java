@@ -10,6 +10,7 @@ import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.Norma
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
+import com.github.adrian99.neuralnetworkgui.data.DataConfiguration;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -20,12 +21,14 @@ import java.util.List;
 public class NetworkWindow extends JFrame {
     private final JButton exportNetworkButton;
     private final JButton importDataButton;
+    private final JButton configureDataButton;
     private final NetworkVisualizerComponent networkVisualizerComponent;
     private final JFileChooser fileChooser = new JFileChooser();
 
     private NeuralNetwork neuralNetwork = null;
     private double[][] inputData;
-    private double[][] outputData;
+    private int[][] outputData;
+    private transient DataConfiguration dataConfiguration = new DataConfiguration(false, 1);
 
     public NetworkWindow() {
         setTitle("Neural network");
@@ -51,6 +54,9 @@ public class NetworkWindow extends JFrame {
         importDataButton = new JButton("Import data");
         importDataButton.addActionListener(event -> onImportData());
         topButtonsPanel.add(importDataButton);
+        configureDataButton = new JButton("Configure data");
+        configureDataButton.addActionListener(event -> onConfigureData());
+        topButtonsPanel.add(configureDataButton);
 
         updateButtons();
 
@@ -99,7 +105,7 @@ public class NetworkWindow extends JFrame {
             } catch (IOException | ClassNotFoundException e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),
-                        "Error occurred while importing network from file: " + e.getMessage(),
+                        "Error occurred while importing network from file:\n" + e.getMessage(),
                         "Importing error",
                         JOptionPane.ERROR_MESSAGE
                 );
@@ -116,7 +122,7 @@ public class NetworkWindow extends JFrame {
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),
-                        "Error occurred while exporting network to file: " + e.getMessage(),
+                        "Error occurred while exporting network to file:\n" + e.getMessage(),
                         "Exporting error",
                         JOptionPane.ERROR_MESSAGE
                 );
@@ -149,6 +155,7 @@ public class NetworkWindow extends JFrame {
     private void updateButtons() {
         exportNetworkButton.setEnabled(neuralNetwork != null);
         importDataButton.setEnabled(neuralNetwork != null);
+        configureDataButton.setEnabled(inputData != null && outputData != null);
     }
 
     private void onImportData() {
@@ -159,8 +166,8 @@ public class NetworkWindow extends JFrame {
                 var networkInputsCount = neuralNetwork.getLayers()[0].getNeurons()[0].getWeights().length;
                 var networkOutputsCount = neuralNetwork.getLayers()[neuralNetwork.getLayers().length - 1].getNeurons().length;
                 if (numericData.getColumnsCount() >= networkInputsCount + networkOutputsCount) {
-                    inputData = numericData.toArray(0, networkInputsCount - 1);
-                    outputData = numericData.toArray(networkInputsCount, networkInputsCount + networkOutputsCount - 1);
+                    inputData = numericData.toDoubleArray(0, networkInputsCount - 1);
+                    outputData = numericData.toIntArray(networkInputsCount, networkInputsCount + networkOutputsCount - 1);
                 } else {
                     JOptionPane.showMessageDialog(
                             getContentPane(),
@@ -174,12 +181,16 @@ public class NetworkWindow extends JFrame {
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),
-                        "Error occurred while importing data from file: " + e.getMessage(),
+                        "Error occurred while importing data from file:\n" + e.getMessage(),
                         "Importing error",
                         JOptionPane.ERROR_MESSAGE
                 );
             }
             updateButtons();
         }
+    }
+
+    private void onConfigureData() {
+        new DataConfiguratorWindow(c -> dataConfiguration = c, dataConfiguration);
     }
 }

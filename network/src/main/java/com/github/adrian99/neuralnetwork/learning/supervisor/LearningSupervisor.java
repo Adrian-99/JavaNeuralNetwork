@@ -85,7 +85,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     private void singleEpochLearning(ErrorFunction errorFunction, LearningFunction learningFunction) {
         var epochData = dataProvider.getData();
         neuralNetwork.learnSingleEpoch(epochData.learningData().getInputs(), epochData.learningData().getTargets(), errorFunction, learningFunction);
-        dataProvider.calculateAccuracyAndError(neuralNetwork, errorFunction);
+        dataProvider.update(neuralNetwork, errorFunction);
         learningEpochsCompletedCount++;
     }
 

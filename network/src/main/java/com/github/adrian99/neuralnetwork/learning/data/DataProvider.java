@@ -17,7 +17,7 @@ public abstract class DataProvider {
     }
 
     public abstract LearningAndValidationData getData();
-    public abstract void calculateAccuracyAndError(NeuralNetwork neuralNetwork, ErrorFunction errorFunction);
+    public abstract void update(NeuralNetwork neuralNetwork, ErrorFunction errorFunction);
     public abstract double getAccuracy();
     public abstract double getError();
 }

@@ -68,7 +68,7 @@ public class CrossValidationDataProvider extends DataProvider {
     }
 
     @Override
-    public void calculateAccuracyAndError(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
+    public void update(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
         var networkOutputs = neuralNetwork.activate(currentValidationData.getInputs());
 
         var currentAccuracy = Statistics.accuracy(networkOutputs, currentValidationData.getTargets());
