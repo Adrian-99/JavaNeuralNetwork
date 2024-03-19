@@ -59,7 +59,7 @@ public class MultiLayerNeuralNetwork extends NeuralNetwork {
     }
 
     @Override
-    protected void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs) {
+    protected void calculateNeuronErrors(ErrorFunction errorFunction, int[] targetOutputs) {
         outputLayer.calculateNeuronErrors(errorFunction, targetOutputs);
         for (var i = hiddenLayers.length - 1; i >= 0; i--) {
             hiddenLayers[i].calculateNeuronErrors();

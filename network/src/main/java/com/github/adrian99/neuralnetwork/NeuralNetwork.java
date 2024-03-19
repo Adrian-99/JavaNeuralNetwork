@@ -17,12 +17,12 @@ public abstract class NeuralNetwork implements Serializable {
     public abstract NeuronsLayer[] getLayers();
     public abstract double[] activate(double[] inputs);
 
-    protected abstract void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs);
+    protected abstract void calculateNeuronErrors(ErrorFunction errorFunction, int[] targetOutputs);
 
     protected abstract void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs);
 
     public void learnSingleEpoch(double[][] inputSets,
-                                 double[][] targetOutputSets,
+                                 int[][] targetOutputSets,
                                  ErrorFunction errorFunction,
                                  LearningFunction learningFunction) {
         if (inputSets.length == targetOutputSets.length) {

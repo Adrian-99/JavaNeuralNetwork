@@ -56,12 +56,23 @@ public class NumericData {
         return this;
     }
 
-    public double[][] toArray(int startColumnIndex, int endColumnIndex) {
+    public double[][] toDoubleArray(int startColumnIndex, int endColumnIndex) {
         var result = new double[columns.get(startColumnIndex).size()][];
         for (var i = 0; i < columns.get(startColumnIndex).size(); i++) {
             result[i] = new double[endColumnIndex - startColumnIndex + 1];
             for (var j = startColumnIndex; j <= endColumnIndex; j++) {
                 result[i][j - startColumnIndex] = columns.get(j).get(i);
+            }
+        }
+        return result;
+    }
+
+    public int[][] toIntArray(int startColumnIndex, int endColumnIndex) {
+        var result = new int[columns.get(startColumnIndex).size()][];
+        for (var i = 0; i < columns.get(startColumnIndex).size(); i++) {
+            result[i] = new int[endColumnIndex - startColumnIndex + 1];
+            for (var j = startColumnIndex; j <= endColumnIndex; j++) {
+                result[i][j - startColumnIndex] = (int) Math.round(columns.get(j).get(i));
             }
         }
         return result;

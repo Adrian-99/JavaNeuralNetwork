@@ -23,7 +23,7 @@ public class SingleLayerNeuralNetwork extends NeuralNetwork {
     }
 
     @Override
-    protected void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs) {
+    protected void calculateNeuronErrors(ErrorFunction errorFunction, int[] targetOutputs) {
         layer.calculateNeuronErrors(errorFunction, targetOutputs);
     }
 

@@ -24,7 +24,7 @@ public class OutputLayerNeuron extends Neuron {
         super.calculateOutput(previousLayer);
     }
 
-    public void calculateError(ErrorFunction errorFunction, double targetOutput) {
+    public void calculateError(ErrorFunction errorFunction, int targetOutput) {
         super.calculateErrorForOutputLayer(errorFunction, targetOutput);
     }
 

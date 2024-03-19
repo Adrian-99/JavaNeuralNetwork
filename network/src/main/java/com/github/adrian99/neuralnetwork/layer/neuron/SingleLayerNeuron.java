@@ -17,7 +17,7 @@ public class SingleLayerNeuron extends Neuron {
         super.calculateOutputForInputLayer(inputs);
     }
 
-    public void calculateError(ErrorFunction errorFunction, double targetOutput) {
+    public void calculateError(ErrorFunction errorFunction, int targetOutput) {
         super.calculateErrorForOutputLayer(errorFunction, targetOutput);
     }
 

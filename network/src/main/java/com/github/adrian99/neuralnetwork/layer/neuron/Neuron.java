@@ -61,7 +61,7 @@ public abstract class Neuron implements Serializable {
         output = activationFunction.apply(activationValue);
     }
 
-    protected void calculateErrorForOutputLayer(ErrorFunction errorFunction, double targetOutput) {
+    protected void calculateErrorForOutputLayer(ErrorFunction errorFunction, int targetOutput) {
         error = errorFunction.applyDerivative(output, targetOutput) * activationFunction.applyDerivative(output);
     }
 

@@ -2,7 +2,7 @@ package com.github.adrian99.neuralnetwork.learning.error;
 
 public class SumSquaredErrorFunction implements ErrorFunction {
     @Override
-    public double apply(double[] networkOutputs, double[] expectedOutputs) {
+    public double apply(double[] networkOutputs, int[] expectedOutputs) {
         if (networkOutputs.length == expectedOutputs.length) {
             var squaresSum = 0.0;
             for (var i = 0; i < networkOutputs.length; i++) {
@@ -15,7 +15,7 @@ public class SumSquaredErrorFunction implements ErrorFunction {
     }
 
     @Override
-    public double applyDerivative(double networkOutput, double targetOutput) {
+    public double applyDerivative(double networkOutput, int targetOutput) {
         return networkOutput - targetOutput;
     }
 }

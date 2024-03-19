@@ -39,7 +39,7 @@ public class OutputNeuronsLayer implements NeuronsLayer {
         return outputs;
     }
 
-    public void calculateNeuronErrors(ErrorFunction errorFunction, double[] targetOutputs) {
+    public void calculateNeuronErrors(ErrorFunction errorFunction, int[] targetOutputs) {
         if (neurons.length == targetOutputs.length) {
             for (var i = 0; i < neurons.length; i++) {
                 neurons[i].calculateError(errorFunction, targetOutputs[i]);

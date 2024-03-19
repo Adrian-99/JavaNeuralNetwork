@@ -5,18 +5,27 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivatio
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
+import com.github.adrian99.neuralnetwork.learning.data.CrossValidationDataProvider;
+import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
+import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
+import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
+import com.github.adrian99.neuralnetwork.util.Statistics;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class Main {
     @SuppressWarnings("java:S106")
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, ExecutionException {
 //        var input = new double[] { 15.7543, 4347.5345, 1.6747, -35.45, 0.7658 };
 //
 //        var activationFunction = new LinearActivationFunction(2.0);
@@ -52,27 +61,30 @@ public class Main {
                 .normalize(1)
                 .normalize(2)
                 .normalize(3);
-        var inputs = numericData.toArray(0, 3);
-        var target = numericData.toArray(4, 4);
+        var inputs = numericData.toDoubleArray(0, 3);
+        var target = numericData.toIntArray(4, 4);
 
         var weightInitializationFunction = new NormalizedXavierWeightInitializationFunction();
         var network = new NeuralNetwork.Builder(4, 1)
                 .addLayer(2, new LogisticActivationFunction(5), weightInitializationFunction)
                 .addOutputLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
 
-        double[][] outputs;
-        double error = 100;
         var errorFunction = new SumSquaredErrorFunction();
         var learningFunction = new BackPropagationLearningFunction(1.5);
 
-        for (var epoch = 0; error > 1; epoch += 10) {
-            outputs = network.activate(inputs);
-            error = calculateTotalError(errorFunction, outputs, target);
-            System.out.println("Epoch: " + epoch + "; error: " + error);
-            for (var i = 0; i < 10; i++) {
-                network.learnSingleEpoch(inputs, target, errorFunction, learningFunction);
-            }
-        }
+        var dataProvider = new CrossValidationDataProvider(inputs, target, 10);
+        var learningSupervisor = new LearningSupervisor(network, dataProvider);
+
+        var stats = learningSupervisor.startLearningAsync(
+                new LearningSupervisor.Configuration(errorFunction, learningFunction)
+                        .addEndCondition(new TimeEndCondition(20))
+                        .addEndCondition(new ErrorEndCondition(0.001))
+                        .setEpochBatchSize(10000)
+                        .setUpdateCallback(Main::printStats)
+                ).get();
+
+        System.out.println("END");
+        printStats(stats);
 
 
 //        printArray2D(outputs);
@@ -86,11 +98,13 @@ public class Main {
         System.out.println("]");
     }
 
-    private static double calculateTotalError(ErrorFunction errorFunction, double[][] outputs, double[][] targetOutputs) {
-        var result = 0.0;
-        for (var i = 0; i < outputs.length; i++) {
-            result += errorFunction.apply(outputs[i], targetOutputs[i]);
-        }
-        return result;
+    private static void printStats(LearningStatisticsProvider stats) {
+        System.out.printf(
+                "Error: %f; Accuracy: %f; Epochs: %d; Time: %ds\n",
+                stats.getCurrentError(),
+                stats.getCurrentAccuracy(),
+                stats.getLearningEpochsCompletedCount(),
+                stats.getTotalLearningTimeSeconds()
+        );
     }
 }
