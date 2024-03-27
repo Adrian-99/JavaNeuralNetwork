@@ -17,15 +17,26 @@ import java.util.function.Consumer;
 import static com.github.adrian99.neuralnetworkgui.util.GridBagLayoutCreator.addComponent;
 
 public class NetworkLayerCreatorWindow extends JDialog {
-    private static final Map<String, List<String>> ACTIVATION_FUNCTION_PROPERTIES = Map.of(
-            LinearActivationFunction.class.getSimpleName(), List.of("Slope", "Intercept"),
-            LogisticActivationFunction.class.getSimpleName(), List.of("Growth rate", "Supremum"),
-            UnitStepActivationFunction.class.getSimpleName(), Collections.emptyList()
-    );
-    private static final String[] WEIGHT_INITIALIZATION_FUNCTIONS = new String[] {
-            XavierWeightInitializationFunction.class.getSimpleName(),
-            NormalizedXavierWeightInitializationFunction.class.getSimpleName()
-    };
+    private static final Map<String, Map<String, Double>> ACTIVATION_FUNCTION_PROPERTIES;
+    private static final String[] WEIGHT_INITIALIZATION_FUNCTIONS;
+
+    static {
+        ACTIVATION_FUNCTION_PROPERTIES = new LinkedHashMap<>();
+        var linearFunctionProperties = new LinkedHashMap<String, Double>();
+        linearFunctionProperties.put("Slope", 1d);
+        linearFunctionProperties.put("Intercept", 0d);
+        ACTIVATION_FUNCTION_PROPERTIES.put(LinearActivationFunction.class.getSimpleName(), linearFunctionProperties);
+        var logisticFunctionProperties = new LinkedHashMap<String, Double>();
+        logisticFunctionProperties.put("Growth rate", 1d);
+        logisticFunctionProperties.put("Supremum", 1d);
+        ACTIVATION_FUNCTION_PROPERTIES.put(LogisticActivationFunction.class.getSimpleName(), logisticFunctionProperties);
+        ACTIVATION_FUNCTION_PROPERTIES.put(UnitStepActivationFunction.class.getSimpleName(), Collections.emptyMap());
+
+        WEIGHT_INITIALIZATION_FUNCTIONS = new String[] {
+                XavierWeightInitializationFunction.class.getSimpleName(),
+                NormalizedXavierWeightInitializationFunction.class.getSimpleName()
+        };
+    }
 
     private final transient Consumer<NetworkLayerData> onSave;
     private final JSpinner neuronsCountInput;
@@ -77,15 +88,7 @@ public class NetworkLayerCreatorWindow extends JDialog {
         setVisible(true);
     }
 
-    private void initializeActivationFunctionParametersInputs(int count) {
-        var values = new ArrayList<Double>();
-        for (var i = 0; i < count; i++) {
-            values.add(1.0);
-        }
-        initializeActivationFunctionParametersInputs(values);
-    }
-
-    private void initializeActivationFunctionParametersInputs(List<Double> values) {
+    private void initializeActivationFunctionParametersInputs(Collection<Double> values) {
         activationFunctionParametersInputs.clear();
         for (var value : values) {
             activationFunctionParametersInputs.add(new JSpinner(new SpinnerNumberModel(value.doubleValue(), -100000, 100000, 0.001)));
@@ -130,11 +133,10 @@ public class NetworkLayerCreatorWindow extends JDialog {
         );
         if (activationFunctionParameters != null) {
             if (!activationFunctionParameters.isEmpty()) {
-                if (activationFunctionParametersInputs.size() < activationFunctionParameters.size()) {
-                    initializeActivationFunctionParametersInputs(activationFunctionParameters.size());
-                }
-                for (var i = 0; i < activationFunctionParameters.size(); i++) {
-                    var label = new JLabel(activationFunctionParameters.get(i));
+                initializeActivationFunctionParametersInputs(activationFunctionParameters.values());
+                var i = 0;
+                for (var parameter : activationFunctionParameters.keySet()) {
+                    var label = new JLabel(parameter);
                     label.setHorizontalAlignment(SwingConstants.RIGHT);
                     addComponent(getContentPane(), label)
                             .gridX(0)
@@ -147,6 +149,7 @@ public class NetworkLayerCreatorWindow extends JDialog {
                             .gridY(rowIndex++)
                             .fill(GridBagConstraints.HORIZONTAL)
                             .done();
+                    i++;
                 }
             } else if (!activationFunctionParametersInputs.isEmpty()) {
                 activationFunctionParametersInputs.clear();

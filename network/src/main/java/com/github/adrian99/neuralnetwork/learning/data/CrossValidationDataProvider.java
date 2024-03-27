@@ -19,7 +19,7 @@ public class CrossValidationDataProvider extends DataProvider {
 
     public CrossValidationDataProvider(double[][] inputs, int[][] targets, int groupsCount) {
         super(inputs, targets);
-        if (groupsCount > 0) {
+        if (groupsCount > 1) {
             if (groupsCount <= inputs.length) {
                 this.groupsCount = groupsCount;
                 groupsIndexes = new ArrayList<>();
@@ -30,7 +30,7 @@ public class CrossValidationDataProvider extends DataProvider {
                 throw new IllegalArgumentException("Groups count must not be greater than inputs length");
             }
         } else {
-            throw new IllegalArgumentException("Groups count must be greater than 0");
+            throw new IllegalArgumentException("Groups count must be greater than 1");
         }
     }
 

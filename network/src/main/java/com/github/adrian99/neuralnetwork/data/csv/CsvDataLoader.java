@@ -56,4 +56,20 @@ public class CsvDataLoader {
                         .collect(Collectors.toCollection(ArrayList::new))
         );
     }
+
+    public static void saveToFile(String file, NumericData numericData) throws IOException {
+        var data = numericData.toDoubleArray(0, numericData.getColumnsCount() - 1);
+        try (var fileWriter = new BufferedWriter(new FileWriter(file))) {
+            for (var row : data) {
+                for (var i = 0; i < row.length; i++) {
+                    fileWriter.append(String.valueOf(row[i]));
+                    if (i < row.length - 1) {
+                        fileWriter.append(DELIMITER);
+                    } else {
+                        fileWriter.append('\n');
+                    }
+                }
+            }
+        }
+    }
 }

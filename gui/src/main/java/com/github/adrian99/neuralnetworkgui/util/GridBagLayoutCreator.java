@@ -18,6 +18,23 @@ public class GridBagLayoutCreator {
         return new GridBagLayoutCreator(container, component);
     }
 
+    public static void addInputWithLabel(Container container, JSpinner input, String labelText, int gridX, int gridY) {
+        var inputLabel = new JLabel(labelText);
+        inputLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        inputLabel.setLabelFor(input);
+        addComponent(container, inputLabel)
+                .gridX(gridX)
+                .gridY(gridY)
+                .fill(GridBagConstraints.HORIZONTAL)
+                .done();
+
+        addComponent(container, input)
+                .gridX(gridX + 1)
+                .gridY(gridY)
+                .fill(GridBagConstraints.HORIZONTAL)
+                .done();
+    }
+
     public GridBagLayoutCreator gridX(int value) {
         constraints.gridx = value;
         return this;

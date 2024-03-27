@@ -12,9 +12,11 @@ import java.util.List;
 public class NetworkVisualizerComponent extends JComponent {
     private final List<List<Point>> neuronPoints = new ArrayList<>();
     private NeuralNetwork neuralNetwork;
+    private double[][][] weights;
+    private double[][] biases;
     private int scale;
-    private double weightsLowerBound;
-    private double weightsUpperBound;
+    private Double weightsLowerBound;
+    private Double weightsUpperBound;
 
     public NetworkVisualizerComponent() {
         addComponentListener(new ResizeListener());
@@ -22,6 +24,8 @@ public class NetworkVisualizerComponent extends JComponent {
 
     public void setNeuralNetwork(NeuralNetwork neuralNetwork) {
         this.neuralNetwork = neuralNetwork;
+        weightsUpperBound = null;
+        weightsLowerBound = null;
         calculateVisualizationProperties();
         repaint();
     }
@@ -72,37 +76,59 @@ public class NetworkVisualizerComponent extends JComponent {
     }
 
     private void drawWeightsAndBiases(Graphics2D g) {
+        copyWeightsAndBiases();
         calculateWeightsBounds();
 
-        for (var layerIndex = 0; layerIndex < neuralNetwork.getLayers().length; layerIndex++) {
-            for (var neuronIndex = 0; neuronIndex < neuralNetwork.getLayers()[layerIndex].getNeurons().length; neuronIndex++) {
+        for (var layerIndex = 0; layerIndex < weights.length; layerIndex++) {
+            for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
                 var destinationPoint = neuronPoints.get(layerIndex + 1).get(neuronIndex);
-                for (var weightIndex = 0; weightIndex < neuralNetwork.getLayers()[layerIndex].getNeurons()[neuronIndex].getWeights().length; weightIndex++) {
-                    drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, neuralNetwork.getLayers()[layerIndex].getNeurons()[neuronIndex].getWeights()[weightIndex]);
+                for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
+                    drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, weights[layerIndex][neuronIndex][weightIndex]);
                 }
-                drawBias(g, destinationPoint, neuralNetwork.getLayers()[layerIndex].getNeurons()[neuronIndex].getBias());
+                drawBias(g, destinationPoint, biases[layerIndex][neuronIndex]);
+            }
+        }
+    }
+
+    private void copyWeightsAndBiases() {
+        var layers = neuralNetwork.getLayers();
+        weights = new double[layers.length][][];
+        biases = new double[layers.length][];
+        for (var layerIndex = 0; layerIndex < layers.length; layerIndex++) {
+            var neurons = layers[layerIndex].getNeurons();
+            weights[layerIndex] = new double[neurons.length][];
+            biases[layerIndex] = new double[neurons.length];
+            for (var neuronIndex = 0; neuronIndex < neurons.length; neuronIndex++) {
+                var neuronWeights = neurons[neuronIndex].getWeights();
+                weights[layerIndex][neuronIndex] = new double[neuronWeights.length];
+                System.arraycopy(neuronWeights, 0, weights[layerIndex][neuronIndex], 0, neuronWeights.length);
+                biases[layerIndex][neuronIndex] = neurons[neuronIndex].getBias();
             }
         }
     }
 
     private void calculateWeightsBounds() {
-        weightsLowerBound = neuralNetwork.getLayers()[0].getNeurons()[0].getBias();
-        weightsUpperBound = weightsLowerBound;
+        if (weightsLowerBound == null) {
+            weightsLowerBound = biases[0][0];
+        }
+        if (weightsUpperBound == null) {
+            weightsUpperBound = weightsLowerBound;
+        }
 
-        for (var layer : neuralNetwork.getLayers()) {
-            for (var neuron : layer.getNeurons()) {
-                if (neuron.getBias() < weightsLowerBound) {
-                    weightsLowerBound = neuron.getBias();
+        for (var layerIndex = 0; layerIndex < weights.length; layerIndex++) {
+            for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
+                if (biases[layerIndex][neuronIndex] < weightsLowerBound) {
+                    weightsLowerBound = biases[layerIndex][neuronIndex];
                 }
-                if (neuron.getBias() > weightsUpperBound) {
-                    weightsUpperBound = neuron.getBias();
+                if (biases[layerIndex][neuronIndex] > weightsUpperBound) {
+                    weightsUpperBound = biases[layerIndex][neuronIndex];
                 }
-                for (var weight : neuron.getWeights()) {
-                    if (weight < weightsLowerBound) {
-                        weightsLowerBound = weight;
+                for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
+                    if (weights[layerIndex][neuronIndex][weightIndex] < weightsLowerBound) {
+                        weightsLowerBound = weights[layerIndex][neuronIndex][weightIndex];
                     }
-                    if (weight > weightsUpperBound) {
-                        weightsUpperBound = weight;
+                    if (weights[layerIndex][neuronIndex][weightIndex] > weightsUpperBound) {
+                        weightsUpperBound = weights[layerIndex][neuronIndex][weightIndex];
                     }
                 }
             }

@@ -31,20 +31,27 @@ public class SimpleDataProvider extends DataProvider {
 
     @Override
     public double getAccuracy() {
-        tryToUpdateNetworkOutputs();
-        return Statistics.accuracy(networkOutputs, data.validationData().getTargets());
+        if (tryToUpdateNetworkOutputs()) {
+            return Statistics.accuracy(networkOutputs, data.validationData().getTargets());
+        } else {
+            return 0;
+        }
     }
 
     @Override
     public double getError() {
-        tryToUpdateNetworkOutputs();
-        return Statistics.error(networkOutputs, data.validationData().getTargets(), errorFunction);
+        if (tryToUpdateNetworkOutputs()) {
+            return Statistics.error(networkOutputs, data.validationData().getTargets(), errorFunction);
+        } else {
+            return Double.MAX_VALUE;
+        }
     }
 
-    private void tryToUpdateNetworkOutputs() {
-        if (networkOutputsUpdateRequired) {
+    private boolean tryToUpdateNetworkOutputs() {
+        if (networkOutputsUpdateRequired && neuralNetwork != null) {
             networkOutputs = neuralNetwork.activate(data.validationData().getInputs());
             networkOutputsUpdateRequired = false;
         }
+        return networkOutputs != null;
     }
 }

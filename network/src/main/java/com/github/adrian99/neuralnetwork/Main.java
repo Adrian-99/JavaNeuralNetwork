@@ -6,6 +6,7 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivat
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
 import com.github.adrian99.neuralnetwork.learning.data.CrossValidationDataProvider;
+import com.github.adrian99.neuralnetwork.learning.data.SimpleDataProvider;
 import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
@@ -17,7 +18,9 @@ import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetwork.util.Statistics;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Map;
@@ -72,20 +75,25 @@ public class Main {
         var errorFunction = new SumSquaredErrorFunction();
         var learningFunction = new BackPropagationLearningFunction(1.5);
 
-        var dataProvider = new CrossValidationDataProvider(inputs, target, 10);
+//        var dataProvider = new CrossValidationDataProvider(inputs, target, 10);
+        var dataProvider = new SimpleDataProvider(inputs, target);
         var learningSupervisor = new LearningSupervisor(network, dataProvider);
 
         var stats = learningSupervisor.startLearningAsync(
                 new LearningSupervisor.Configuration(errorFunction, learningFunction)
-                        .addEndCondition(new TimeEndCondition(20))
-                        .addEndCondition(new ErrorEndCondition(0.001))
-                        .setEpochBatchSize(10000)
+//                        .addEndCondition(new TimeEndCondition(20))
+//                        .addEndCondition(new AccuracyEndCondition(0.9999))
+                        .addEndCondition(new ErrorEndCondition(0.8))
+                        .setEpochBatchSize(100)
                         .setUpdateCallback(Main::printStats)
                 ).get();
 
         System.out.println("END");
         printStats(stats);
 
+        try (var objectOutputStream = new ObjectOutputStream(new FileOutputStream("network-learned"))) {
+            objectOutputStream.writeObject(network);
+        }
 
 //        printArray2D(outputs);
     }

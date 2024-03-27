@@ -25,6 +25,11 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     }
 
     @Override
+    public boolean isLearningInProgress() {
+        return lastStartSystemMillis != 0;
+    }
+
+    @Override
     public double getCurrentAccuracy() {
         return dataProvider.getAccuracy();
     }
@@ -42,7 +47,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     @Override
     public long getTotalLearningTimeSeconds() {
         return totalLearningTimeSeconds +
-                lastStartSystemMillis != 0 ? (System.currentTimeMillis() - lastStartSystemMillis) / 1000 : 0;
+                (lastStartSystemMillis != 0 ? (System.currentTimeMillis() - lastStartSystemMillis) / 1000 : 0);
     }
 
     public void startLearning(Configuration configuration) {
