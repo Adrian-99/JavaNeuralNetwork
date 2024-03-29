@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,8 +42,14 @@ public class NetworkWindow extends JFrame {
     private final JButton pauseLearningButton;
     private final JButton resumeLearningButton;
     private final JButton testNetworkButton;
-    private final JPanel topInfoPanel;
+    private final JPanel topInfoPanel1;
+    private final JPanel topInfoPanel2;
     private final NetworkVisualizerComponent networkVisualizerComponent;
+    private final JPanel bottomInfoPanel;
+    private final JLabel bottomEpochsLabel;
+    private final JLabel bottomTimeLabel;
+    private final JLabel bottomAccuracyLabel;
+    private final JLabel bottomErrorLabel;
     private final JFileChooser fileChooser = new JFileChooser();
 
     private NeuralNetwork neuralNetwork = null;
@@ -105,14 +112,48 @@ public class NetworkWindow extends JFrame {
 
         updateButtons();
 
-        topInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
-        topPanel.add(topInfoPanel);
+        topInfoPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        topPanel.add(topInfoPanel1);
+        topInfoPanel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        topPanel.add(topInfoPanel2);
 
         updateTopInfo();
 
         networkVisualizerComponent = new NetworkVisualizerComponent();
         networkVisualizerComponent.setPreferredSize(new Dimension(1080, 720));
         getContentPane().add(networkVisualizerComponent, BorderLayout.CENTER);
+
+        bottomInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        getContentPane().add(bottomInfoPanel, BorderLayout.SOUTH);
+
+        var valueLabelsDimension = new Dimension(50, 20);
+        bottomEpochsLabel = new JLabel();
+        bottomEpochsLabel.setPreferredSize(valueLabelsDimension);
+        bottomEpochsLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        bottomTimeLabel = new JLabel();
+        bottomTimeLabel.setPreferredSize(valueLabelsDimension);
+        bottomTimeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        bottomAccuracyLabel = new JLabel();
+        bottomAccuracyLabel.setPreferredSize(valueLabelsDimension);
+        bottomAccuracyLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        bottomErrorLabel = new JLabel();
+        bottomErrorLabel.setPreferredSize(valueLabelsDimension);
+        bottomErrorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        var spacerDimension = new Dimension(25, 20);
+        bottomInfoPanel.add(new JLabel("Epochs:"));
+        bottomInfoPanel.add(bottomEpochsLabel);
+        bottomInfoPanel.add(Box.createRigidArea(spacerDimension));
+        bottomInfoPanel.add(new JLabel("Time:"));
+        bottomInfoPanel.add(bottomTimeLabel);
+        bottomInfoPanel.add(Box.createRigidArea(spacerDimension));
+        bottomInfoPanel.add(new JLabel("Accuracy:"));
+        bottomInfoPanel.add(bottomAccuracyLabel);
+        bottomInfoPanel.add(Box.createRigidArea(spacerDimension));
+        bottomInfoPanel.add(new JLabel("Error:"));
+        bottomInfoPanel.add(bottomErrorLabel);
+
+        updateBottomInfo(null);
 
         setVisible(true);
         pack();
@@ -146,6 +187,7 @@ public class NetworkWindow extends JFrame {
 
             updateButtons();
             updateTopInfo();
+            updateBottomInfo(null);
         });
     }
 
@@ -171,6 +213,7 @@ public class NetworkWindow extends JFrame {
             }
             updateButtons();
             updateTopInfo();
+            updateBottomInfo(null);
         }
     }
 
@@ -225,6 +268,7 @@ public class NetworkWindow extends JFrame {
             }
             updateButtons();
             updateTopInfo();
+            updateBottomInfo(null);
         }
     }
 
@@ -255,8 +299,9 @@ public class NetworkWindow extends JFrame {
                 new BackPropagationLearningFunction(learningConfigurationData.learningRate())
         ).setUpdateCallback(s -> {
             networkVisualizerComponent.repaint();
-            updateTopInfo(s);
+            updateBottomInfo(s);
             if (!s.isLearningInProgress()) {
+                updateTopInfo();
                 updateButtons();
             }
         }).setEpochBatchSize(learningConfigurationData.epochBatchSize());
@@ -304,38 +349,64 @@ public class NetworkWindow extends JFrame {
     }
 
     private void updateTopInfo() {
-        updateTopInfo(null);
-    }
-
-    private void updateTopInfo(LearningStatisticsProvider stats) {
-        topInfoPanel.removeAll();
+        topInfoPanel1.removeAll();
+        topInfoPanel2.removeAll();
         if (neuralNetwork == null) {
             var label = new JLabel("Missing neural network");
             label.setForeground(Color.red);
-            topInfoPanel.add(label);
+            topInfoPanel1.add(label);
         } else if (inputData == null || outputData == null) {
             var label = new JLabel("Missing learning data");
             label.setForeground(Color.red);
-            topInfoPanel.add(label);
+            topInfoPanel1.add(label);
         } else {
-            topInfoPanel.add(new JLabel(dataImportInfo));
-            if (previousCrossValidationGroupsCount != null) {
+            topInfoPanel1.add(new JLabel(dataImportInfo));
+            if (learningConfigurationData != null) {
                 var crossValidationInfoText = "Cross-validation: %s".formatted(
-                        previousCrossValidationGroupsCount > 1 ?
-                                "Enabled (%d groups)".formatted(previousCrossValidationGroupsCount) :
-                                "Disabled"
+                        learningConfigurationData.crossValidationGroupsCount()
+                                .map("Enabled (%d groups)"::formatted)
+                                .orElse("Disabled")
                 );
-                topInfoPanel.add(new JLabel(crossValidationInfoText));
-            }
-            if (stats != null) {
-                topInfoPanel.add(new JLabel("Epochs: " + stats.getLearningEpochsCompletedCount()));
-                topInfoPanel.add(new JLabel("Time: " + convertSecondsToTimer(stats.getTotalLearningTimeSeconds())));
-                topInfoPanel.add(new JLabel("Accuracy: %.3f".formatted(stats.getCurrentAccuracy())));
-                topInfoPanel.add(new JLabel("Error: %.3f".formatted(stats.getCurrentError())));
+                topInfoPanel1.add(new JLabel(crossValidationInfoText));
+
+                topInfoPanel2.add(new JLabel("Refresh rate: %d epochs".formatted(learningConfigurationData.epochBatchSize())));
+                topInfoPanel2.add(new JLabel("Learning rate: %.3f".formatted(learningConfigurationData.learningRate())));
+                if (learningConfigurationData.accuracyEndConditionValue().isPresent() ||
+                        learningConfigurationData.epochsCountEndConditionValue().isPresent() ||
+                        learningConfigurationData.errorEndConditionValue().isPresent() ||
+                        learningConfigurationData.timeEndConditionValue().isPresent()) {
+                    var endConditionsTexts = new ArrayList<String>();
+                    learningConfigurationData.accuracyEndConditionValue()
+                            .ifPresent(v -> endConditionsTexts.add("accuracy %.3f".formatted(v)));
+                    learningConfigurationData.epochsCountEndConditionValue()
+                            .ifPresent(v -> endConditionsTexts.add("epochs %d".formatted(v)));
+                    learningConfigurationData.errorEndConditionValue()
+                            .ifPresent(v -> endConditionsTexts.add("error %.3f".formatted(v)));
+                    learningConfigurationData.timeEndConditionValue()
+                            .ifPresent(v -> endConditionsTexts.add("time %ds".formatted(v)));
+                    topInfoPanel2.add(new JLabel("End conditions: " + endConditionsTexts));
+                }
             }
         }
-        topInfoPanel.revalidate();
-        topInfoPanel.repaint();
+        topInfoPanel1.revalidate();
+        topInfoPanel1.repaint();
+        topInfoPanel2.revalidate();
+        topInfoPanel2.repaint();
+    }
+
+    private void updateBottomInfo(LearningStatisticsProvider stats) {
+        if (stats != null) {
+            bottomEpochsLabel.setText(String.valueOf(stats.getLearningEpochsCompletedCount()));
+            bottomTimeLabel.setText(convertSecondsToTimer(stats.getTotalLearningTimeSeconds()));
+            bottomAccuracyLabel.setText("%.3f".formatted(stats.getCurrentAccuracy()));
+            bottomErrorLabel.setText("%.3f".formatted(stats.getCurrentError()));
+
+            bottomInfoPanel.setVisible(true);
+            bottomInfoPanel.revalidate();
+            bottomInfoPanel.repaint();
+        } else {
+            bottomInfoPanel.setVisible(false);
+        }
     }
 
     private ActivationFunction getActivationFunction(String functionName, List<Double> functionParameters) {
