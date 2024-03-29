@@ -9,11 +9,19 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.UnitStepActivat
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
+import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
 import com.github.adrian99.neuralnetwork.learning.data.CrossValidationDataProvider;
+import com.github.adrian99.neuralnetwork.learning.data.DataProvider;
 import com.github.adrian99.neuralnetwork.learning.data.SimpleDataProvider;
+import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
+import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
+import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
+import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -42,6 +50,7 @@ public class NetworkWindow extends JFrame {
     private double[][] inputData;
     private int[][] outputData;
     private Integer previousCrossValidationGroupsCount = null;
+    private transient LearningConfigurationData learningConfigurationData = null;
     private transient LearningSupervisor.Configuration learningConfiguration = null;
     private transient LearningSupervisor learningSupervisor = null;
     private transient CompletableFuture<LearningStatisticsProvider> learningFuture = null;
@@ -131,6 +140,7 @@ public class NetworkWindow extends JFrame {
             inputData = null;
             outputData = null;
             previousCrossValidationGroupsCount = null;
+            learningConfigurationData = null;
             learningSupervisor = null;
             learningFuture = null;
 
@@ -148,6 +158,7 @@ public class NetworkWindow extends JFrame {
                 inputData = null;
                 outputData = null;
                 previousCrossValidationGroupsCount = null;
+                learningConfigurationData = null;
                 learningSupervisor = null;
                 learningFuture = null;
             } catch (IOException | ClassNotFoundException e) {
@@ -193,6 +204,7 @@ public class NetworkWindow extends JFrame {
                     learningSupervisor = null;
                     learningFuture = null;
                     previousCrossValidationGroupsCount = null;
+                    learningConfigurationData = null;
                 } else {
                     JOptionPane.showMessageDialog(
                             getContentPane(),
@@ -218,32 +230,48 @@ public class NetworkWindow extends JFrame {
 
     private void onStartLearning() {
         if (learningFuture == null || learningFuture.isDone()) {
-            new LearningConfiguratorWindow(
-                    c -> {
-                        if (learningSupervisor == null ||
-                                previousCrossValidationGroupsCount == null ||
-                                !previousCrossValidationGroupsCount.equals(c.crossValidationGroupsCount())) {
-                            previousCrossValidationGroupsCount = c.crossValidationGroupsCount();
-                            var dataProvider = c.crossValidationGroupsCount() > 1 ?
-                                    new CrossValidationDataProvider(inputData, outputData, c.crossValidationGroupsCount()) :
-                                    new SimpleDataProvider(inputData, outputData);
-                            learningSupervisor = new LearningSupervisor(neuralNetwork, dataProvider);
-                        }
-                        learningConfiguration = c.learningConfiguration();
-                        learningConfiguration.setUpdateCallback(s -> {
-                            networkVisualizerComponent.repaint();
-                            updateTopInfo(s);
-                            if (!s.isLearningInProgress()) {
-                                updateButtons();
-                            }
-                        });
-                        learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
-                        updateButtons();
-                        updateTopInfo();
-                    },
-                    inputData.length
-            );
+            if (learningConfigurationData != null) {
+                new LearningConfiguratorWindow(learningConfigurationData, this::startLearningCallback, inputData.length);
+            } else {
+                new LearningConfiguratorWindow(this::startLearningCallback, inputData.length);
+            }
         }
+    }
+
+    private void startLearningCallback(LearningConfigurationData c) {
+        if (learningSupervisor == null ||
+                previousCrossValidationGroupsCount == null ||
+                !previousCrossValidationGroupsCount.equals(c.crossValidationGroupsCount().orElse(1))) {
+            previousCrossValidationGroupsCount = c.crossValidationGroupsCount().orElse(1);
+            var dataProvider = c.crossValidationGroupsCount()
+                    .map(groupsCount -> (DataProvider) new CrossValidationDataProvider(inputData, outputData, groupsCount))
+                    .orElse(new SimpleDataProvider(inputData, outputData));
+            learningSupervisor = new LearningSupervisor(neuralNetwork, dataProvider);
+        }
+        learningConfigurationData = c;
+
+        learningConfiguration = new LearningSupervisor.Configuration(
+                new SumSquaredErrorFunction(),
+                new BackPropagationLearningFunction(learningConfigurationData.learningRate())
+        ).setUpdateCallback(s -> {
+            networkVisualizerComponent.repaint();
+            updateTopInfo(s);
+            if (!s.isLearningInProgress()) {
+                updateButtons();
+            }
+        }).setEpochBatchSize(learningConfigurationData.epochBatchSize());
+        learningConfigurationData.accuracyEndConditionValue()
+                .ifPresent(v -> learningConfiguration.addEndCondition(new AccuracyEndCondition(v)));
+        learningConfigurationData.epochsCountEndConditionValue()
+                .ifPresent(v -> learningConfiguration.addEndCondition(new EpochsCountEndCondition(v)));
+        learningConfigurationData.errorEndConditionValue()
+                .ifPresent(v -> learningConfiguration.addEndCondition(new ErrorEndCondition(v)));
+        learningConfigurationData.timeEndConditionValue()
+                .ifPresent(v -> learningConfiguration.addEndCondition(new TimeEndCondition(v)));
+
+        learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
+        updateButtons();
+        updateTopInfo();
     }
 
     private void onPauseLearning() {

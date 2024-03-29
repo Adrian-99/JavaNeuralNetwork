@@ -1,17 +1,11 @@
 package com.github.adrian99.neuralnetworkgui.window;
 
-import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
-import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
-import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
-import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
-import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
-import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
-import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static com.github.adrian99.neuralnetworkgui.util.GridBagLayoutCreator.addComponent;
@@ -33,6 +27,12 @@ public class LearningConfiguratorWindow extends JDialog {
     private final JSpinner desiredTimeInput;
 
     public LearningConfiguratorWindow(Consumer<LearningConfigurationData> onStart, int crossValidationGroupsCountMaxLimit) {
+        this(new LearningConfigurationData(), onStart, crossValidationGroupsCountMaxLimit);
+    }
+
+    public LearningConfiguratorWindow(LearningConfigurationData configuration,
+                                      Consumer<LearningConfigurationData> onStart,
+                                      int crossValidationGroupsCountMaxLimit) {
         this.onStart = onStart;
 
         setTitle("Configure learning process");
@@ -42,25 +42,25 @@ public class LearningConfiguratorWindow extends JDialog {
         getContentPane().setLayout(new GridBagLayout());
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        refreshPerEpochsCountInput = new JSpinner(new SpinnerNumberModel(1000, 1, 1000000, 1));
-        learningRateInput = new JSpinner(new SpinnerNumberModel(1, -10000, 10000, 0.001));
+        refreshPerEpochsCountInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 1000000, 1));
+        learningRateInput = new JSpinner(new SpinnerNumberModel(configuration.learningRate(), -10000, 10000, 0.001));
 
-        crossValidationCheckbox = new JCheckBox("Enable cross-validation", false);
+        crossValidationCheckbox = new JCheckBox("Enable cross-validation", configuration.crossValidationGroupsCount().isPresent());
         crossValidationCheckbox.addItemListener(i -> drawForm());
-        crossValidationGroupsCountInput = new JSpinner(new SpinnerNumberModel(2, 2, crossValidationGroupsCountMaxLimit, 1));
+        crossValidationGroupsCountInput = new JSpinner(new SpinnerNumberModel(configuration.crossValidationGroupsCount().orElse(2).intValue(), 2, crossValidationGroupsCountMaxLimit, 1));
 
-        accuracyEndConditionCheckbox = new JCheckBox("Enable accuracy end condition");
+        accuracyEndConditionCheckbox = new JCheckBox("Enable accuracy end condition", configuration.accuracyEndConditionValue().isPresent());
         accuracyEndConditionCheckbox.addItemListener(i -> drawForm());
-        desiredAccuracyInput = new JSpinner(new SpinnerNumberModel(0.8, 0, 1, 0.001));
-        epochsCountEndConditionCheckbox = new JCheckBox("Enable epochs count end condition");
+        desiredAccuracyInput = new JSpinner(new SpinnerNumberModel(configuration.accuracyEndConditionValue().orElse(0.8).doubleValue(), 0, 1, 0.001));
+        epochsCountEndConditionCheckbox = new JCheckBox("Enable epochs count end condition", configuration.epochsCountEndConditionValue().isPresent());
         epochsCountEndConditionCheckbox.addItemListener(i -> drawForm());
-        desiredEpochsCountInput = new JSpinner(new SpinnerNumberModel(1000, 1, 1000000000, 1));
-        errorEndConditionCheckbox = new JCheckBox("Enable error end condition");
+        desiredEpochsCountInput = new JSpinner(new SpinnerNumberModel(configuration.epochsCountEndConditionValue().orElse(1000).intValue(), 1, 1000000000, 1));
+        errorEndConditionCheckbox = new JCheckBox("Enable error end condition", configuration.errorEndConditionValue().isPresent());
         errorEndConditionCheckbox.addItemListener(i -> drawForm());
-        desiredErrorInput = new JSpinner(new SpinnerNumberModel(0.2, 0, 1000000, 0.001));
-        timeEndConditionCheckbox = new JCheckBox("Enable time end condition");
+        desiredErrorInput = new JSpinner(new SpinnerNumberModel(configuration.errorEndConditionValue().orElse(0.2).doubleValue(), 0, 1000000, 0.001));
+        timeEndConditionCheckbox = new JCheckBox("Enable time end condition", configuration.timeEndConditionValue().isPresent());
         timeEndConditionCheckbox.addItemListener(i -> drawForm());
-        desiredTimeInput = new JSpinner(new SpinnerNumberModel(60, 1, 10000000, 1));
+        desiredTimeInput = new JSpinner(new SpinnerNumberModel(configuration.timeEndConditionValue().orElse(60).intValue(), 1, 10000000, 1));
 
         drawForm();
 
@@ -138,29 +138,14 @@ public class LearningConfiguratorWindow extends JDialog {
     }
 
     private void onStart() {
-        var configuration = new LearningSupervisor.Configuration(
-                new SumSquaredErrorFunction(),
-                new BackPropagationLearningFunction((Double) learningRateInput.getValue())
-        ).setEpochBatchSize((Integer) refreshPerEpochsCountInput.getValue());
-
-        if (accuracyEndConditionCheckbox.isSelected()) {
-            configuration.addEndCondition(new AccuracyEndCondition((Double) desiredAccuracyInput.getValue()));
-        }
-        if (epochsCountEndConditionCheckbox.isSelected()) {
-            configuration.addEndCondition(new EpochsCountEndCondition((Integer) desiredEpochsCountInput.getValue()));
-        }
-        if (errorEndConditionCheckbox.isSelected()) {
-            configuration.addEndCondition(new ErrorEndCondition((Double) desiredErrorInput.getValue()));
-        }
-        if (timeEndConditionCheckbox.isSelected()) {
-            configuration.addEndCondition(new TimeEndCondition((Integer) desiredTimeInput.getValue()));
-        }
-
         onStart.accept(new LearningConfigurationData(
-                crossValidationCheckbox.isSelected() ?
-                        (Integer) crossValidationGroupsCountInput.getValue() :
-                        0,
-                configuration
+                (Integer) refreshPerEpochsCountInput.getValue(),
+                (Double) learningRateInput.getValue(),
+                crossValidationCheckbox.isSelected() ? Optional.of((Integer) crossValidationGroupsCountInput.getValue()) : Optional.empty(),
+                accuracyEndConditionCheckbox.isSelected() ? Optional.of((Double) desiredAccuracyInput.getValue()) : Optional.empty(),
+                epochsCountEndConditionCheckbox.isSelected() ? Optional.of((Integer) desiredEpochsCountInput.getValue()) : Optional.empty(),
+                errorEndConditionCheckbox.isSelected() ? Optional.of((Double) desiredErrorInput.getValue()) : Optional.empty(),
+                timeEndConditionCheckbox.isSelected() ? Optional.of((Integer) desiredTimeInput.getValue()) : Optional.empty()
         ));
         dispose();
     }
