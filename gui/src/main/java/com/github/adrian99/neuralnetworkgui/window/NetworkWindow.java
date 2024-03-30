@@ -61,6 +61,7 @@ public class NetworkWindow extends JFrame {
     private transient LearningSupervisor.Configuration learningConfiguration = null;
     private transient LearningSupervisor learningSupervisor = null;
     private transient CompletableFuture<LearningStatisticsProvider> learningFuture = null;
+    private Long lastDisplayUpdateMillis = null;
 
     public NetworkWindow() {
         setTitle("Neural network");
@@ -297,14 +298,8 @@ public class NetworkWindow extends JFrame {
         learningConfiguration = new LearningSupervisor.Configuration(
                 new SumSquaredErrorFunction(),
                 new BackPropagationLearningFunction(learningConfigurationData.learningRate())
-        ).setUpdateCallback(s -> {
-            networkVisualizerComponent.repaint();
-            updateBottomInfo(s);
-            if (!s.isLearningInProgress()) {
-                updateTopInfo();
-                updateButtons();
-            }
-        }).setEpochBatchSize(learningConfigurationData.epochBatchSize());
+        ).setUpdateCallback(s -> updateDisplay(s, false))
+                .setEpochBatchSize(learningConfigurationData.epochBatchSize());
         learningConfigurationData.accuracyEndConditionValue()
                 .ifPresent(v -> learningConfiguration.addEndCondition(new AccuracyEndCondition(v)));
         learningConfigurationData.epochsCountEndConditionValue()
@@ -315,8 +310,25 @@ public class NetworkWindow extends JFrame {
                 .ifPresent(v -> learningConfiguration.addEndCondition(new TimeEndCondition(v)));
 
         learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
+        learningFuture.whenComplete((s, e) -> updateDisplay(s, true));
         updateButtons();
         updateTopInfo();
+    }
+
+    private void updateDisplay(LearningStatisticsProvider stats, boolean learningFinished) {
+        if (lastDisplayUpdateMillis == null ||
+                System.currentTimeMillis() - lastDisplayUpdateMillis >= learningConfigurationData.displayRefreshRate() * 1000 ||
+                learningFinished) {
+            networkVisualizerComponent.repaint();
+            updateBottomInfo(stats);
+            if (learningFinished) {
+                updateTopInfo();
+                updateButtons();
+                lastDisplayUpdateMillis = null;
+            } else {
+                lastDisplayUpdateMillis = System.currentTimeMillis();
+            }
+        }
     }
 
     private void onPauseLearning() {
@@ -328,6 +340,7 @@ public class NetworkWindow extends JFrame {
     private void onResumeLearning() {
         if (learningFuture != null && learningFuture.isCancelled()) {
             learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
+            learningFuture.whenComplete((s, e) -> updateDisplay(s, true));
             updateButtons();
             updateTopInfo();
         }
@@ -369,7 +382,7 @@ public class NetworkWindow extends JFrame {
                 );
                 topInfoPanel1.add(new JLabel(crossValidationInfoText));
 
-                topInfoPanel2.add(new JLabel("Refresh rate: %d epochs".formatted(learningConfigurationData.epochBatchSize())));
+                topInfoPanel2.add(new JLabel("Epochs batch size: %d".formatted(learningConfigurationData.epochBatchSize())));
                 topInfoPanel2.add(new JLabel("Learning rate: %.3f".formatted(learningConfigurationData.learningRate())));
                 if (learningConfigurationData.accuracyEndConditionValue().isPresent() ||
                         learningConfigurationData.epochsCountEndConditionValue().isPresent() ||

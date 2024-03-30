@@ -13,7 +13,8 @@ import static com.github.adrian99.neuralnetworkgui.util.GridBagLayoutCreator.add
 
 public class LearningConfiguratorWindow extends JDialog {
     private final transient Consumer<LearningConfigurationData> onStart;
-    private final JSpinner refreshPerEpochsCountInput;
+    private final JSpinner displayRefreshRateInput;
+    private final JSpinner epochsBatchSizeInput;
     private final JSpinner learningRateInput;
     private final JCheckBox crossValidationCheckbox;
     private final JSpinner crossValidationGroupsCountInput;
@@ -42,7 +43,8 @@ public class LearningConfiguratorWindow extends JDialog {
         getContentPane().setLayout(new GridBagLayout());
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        refreshPerEpochsCountInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 1000000, 1));
+        displayRefreshRateInput = new JSpinner(new SpinnerNumberModel(configuration.displayRefreshRate(), 0.1, 60, 0.1));
+        epochsBatchSizeInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 1000000, 1));
         learningRateInput = new JSpinner(new SpinnerNumberModel(configuration.learningRate(), -10000, 10000, 0.001));
 
         crossValidationCheckbox = new JCheckBox("Enable cross-validation", configuration.crossValidationGroupsCount().isPresent());
@@ -71,7 +73,9 @@ public class LearningConfiguratorWindow extends JDialog {
         getContentPane().removeAll();
         var rowIndex = 0;
 
-        addInputWithLabel(getContentPane(), refreshPerEpochsCountInput, "Display refresh rate (epochs)", 0, rowIndex++);
+        addInputWithLabel(getContentPane(), displayRefreshRateInput, "Display refresh rate (seconds)", 0, rowIndex++);
+
+        addInputWithLabel(getContentPane(), epochsBatchSizeInput, "Network epochs batch size", 0, rowIndex++);
 
         addInputWithLabel(getContentPane(), learningRateInput, "Learning rate", 0, rowIndex++);
 
@@ -139,7 +143,8 @@ public class LearningConfiguratorWindow extends JDialog {
 
     private void onStart() {
         onStart.accept(new LearningConfigurationData(
-                (Integer) refreshPerEpochsCountInput.getValue(),
+                (Double) displayRefreshRateInput.getValue(),
+                (Integer) epochsBatchSizeInput.getValue(),
                 (Double) learningRateInput.getValue(),
                 crossValidationCheckbox.isSelected() ? Optional.of((Integer) crossValidationGroupsCountInput.getValue()) : Optional.empty(),
                 accuracyEndConditionCheckbox.isSelected() ? Optional.of((Double) desiredAccuracyInput.getValue()) : Optional.empty(),

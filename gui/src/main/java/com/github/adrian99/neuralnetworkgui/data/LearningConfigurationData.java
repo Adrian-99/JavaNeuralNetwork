@@ -3,6 +3,7 @@ package com.github.adrian99.neuralnetworkgui.data;
 import java.util.Optional;
 
 public record LearningConfigurationData(
+        double displayRefreshRate,
         int epochBatchSize,
         double learningRate,
         Optional<Integer> crossValidationGroupsCount,
@@ -13,7 +14,8 @@ public record LearningConfigurationData(
 ) {
     public LearningConfigurationData() {
         this(
-                1000,
+                0.5,
+                100,
                 1,
                 Optional.empty(),
                 Optional.empty(),
