@@ -21,6 +21,7 @@ import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
+import com.github.adrian99.neuralnetworkgui.component.NeuronVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
 
 import javax.swing.*;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class NetworkWindow extends JFrame {
+    private static final String NETWORK = "network";
+    private static final String NEURON = "neuron";
     private final JButton exportNetworkButton;
     private final JButton newNetworkButton;
     private final JButton importNetworkButton;
@@ -44,7 +47,10 @@ public class NetworkWindow extends JFrame {
     private final JButton testNetworkButton;
     private final JPanel topInfoPanel1;
     private final JPanel topInfoPanel2;
+    private final CardLayout visualizerLayout;
+    private final JPanel visualizerPanel;
     private final NetworkVisualizerComponent networkVisualizerComponent;
+    private final JPanel neuronVisualizerPanel;
     private final JPanel bottomInfoPanel;
     private final JLabel bottomEpochsLabel;
     private final JLabel bottomTimeLabel;
@@ -53,6 +59,7 @@ public class NetworkWindow extends JFrame {
     private final JFileChooser fileChooser = new JFileChooser();
 
     private NeuralNetwork neuralNetwork = null;
+    private NeuronVisualizerComponent neuronVisualizerComponent = null;
     private String dataImportInfo;
     private double[][] inputData;
     private int[][] outputData;
@@ -120,9 +127,16 @@ public class NetworkWindow extends JFrame {
 
         updateTopInfo();
 
-        networkVisualizerComponent = new NetworkVisualizerComponent();
+        visualizerLayout = new CardLayout();
+        visualizerPanel = new JPanel(visualizerLayout);
+        getContentPane().add(visualizerPanel, BorderLayout.CENTER);
+
+        networkVisualizerComponent = new NetworkVisualizerComponent(this::onNeuronClick);
         networkVisualizerComponent.setPreferredSize(new Dimension(1080, 720));
-        getContentPane().add(networkVisualizerComponent, BorderLayout.CENTER);
+        visualizerPanel.add(networkVisualizerComponent, NETWORK);
+        neuronVisualizerPanel = new JPanel();
+        neuronVisualizerPanel.setLayout(new BoxLayout(neuronVisualizerPanel, BoxLayout.Y_AXIS));
+        visualizerPanel.add(neuronVisualizerPanel, NEURON);
 
         bottomInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         getContentPane().add(bottomInfoPanel, BorderLayout.SOUTH);
@@ -154,7 +168,7 @@ public class NetworkWindow extends JFrame {
         bottomInfoPanel.add(new JLabel("Error:"));
         bottomInfoPanel.add(bottomErrorLabel);
 
-        updateBottomInfo(null);
+        bottomInfoPanel.setVisible(false);
 
         setVisible(true);
         pack();
@@ -188,7 +202,7 @@ public class NetworkWindow extends JFrame {
 
             updateButtons();
             updateTopInfo();
-            updateBottomInfo(null);
+            bottomInfoPanel.setVisible(false);
         });
     }
 
@@ -214,7 +228,7 @@ public class NetworkWindow extends JFrame {
             }
             updateButtons();
             updateTopInfo();
-            updateBottomInfo(null);
+            bottomInfoPanel.setVisible(false);
         }
     }
 
@@ -269,7 +283,7 @@ public class NetworkWindow extends JFrame {
             }
             updateButtons();
             updateTopInfo();
-            updateBottomInfo(null);
+            bottomInfoPanel.setVisible(false);
         }
     }
 
@@ -319,7 +333,11 @@ public class NetworkWindow extends JFrame {
         if (lastDisplayUpdateMillis == null ||
                 System.currentTimeMillis() - lastDisplayUpdateMillis >= learningConfigurationData.displayRefreshRate() * 1000 ||
                 learningFinished) {
-            networkVisualizerComponent.repaint();
+            if (neuronVisualizerComponent != null) {
+                neuronVisualizerComponent.repaint();
+            } else {
+                networkVisualizerComponent.repaint();
+            }
             updateBottomInfo(stats);
             if (learningFinished) {
                 updateTopInfo();
@@ -348,6 +366,22 @@ public class NetworkWindow extends JFrame {
 
     private void onTestNetwork() {
         new NetworkTesterWindow(neuralNetwork);
+    }
+
+    private void onNeuronClick(NeuronVisualizerComponent neuronVisualizerComponent) {
+        this.neuronVisualizerComponent = neuronVisualizerComponent;
+        neuronVisualizerPanel.add(this.neuronVisualizerComponent, NEURON);
+        var backButton = new JButton("Back");
+        backButton.addActionListener(e -> onBack());
+        neuronVisualizerPanel.add(backButton);
+        visualizerLayout.show(visualizerPanel, NEURON);
+    }
+
+    private void onBack() {
+        neuronVisualizerPanel.removeAll();
+        neuronVisualizerComponent = null;
+        networkVisualizerComponent.calculateVisualizationProperties();
+        visualizerLayout.show(visualizerPanel, NETWORK);
     }
 
     private void updateButtons() {
@@ -417,8 +451,6 @@ public class NetworkWindow extends JFrame {
             bottomInfoPanel.setVisible(true);
             bottomInfoPanel.revalidate();
             bottomInfoPanel.repaint();
-        } else {
-            bottomInfoPanel.setVisible(false);
         }
     }
 

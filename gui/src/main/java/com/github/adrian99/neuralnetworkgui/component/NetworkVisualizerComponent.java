@@ -1,36 +1,37 @@
 package com.github.adrian99.neuralnetworkgui.component;
 
 import com.github.adrian99.neuralnetwork.NeuralNetwork;
+import com.github.adrian99.neuralnetworkgui.util.VisualizerUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class NetworkVisualizerComponent extends JComponent {
     private final List<List<Point>> neuronPoints = new ArrayList<>();
+    private final transient Consumer<NeuronVisualizerComponent> onNeuronClicked;
     private NeuralNetwork neuralNetwork;
     private double[][][] weights;
     private double[][] biases;
-    private int scale;
-    private Double weightsLowerBound;
-    private Double weightsUpperBound;
+    private transient VisualizerUtils visualizerUtils;
 
-    public NetworkVisualizerComponent() {
+    public NetworkVisualizerComponent(Consumer<NeuronVisualizerComponent> onNeuronClicked) {
+        this.onNeuronClicked = onNeuronClicked;
         addComponentListener(new ResizeListener());
+        addMouseListener(new NeuronClickListener());
     }
 
     public void setNeuralNetwork(NeuralNetwork neuralNetwork) {
         this.neuralNetwork = neuralNetwork;
-        weightsUpperBound = null;
-        weightsLowerBound = null;
+        visualizerUtils = new VisualizerUtils();
         calculateVisualizationProperties();
         repaint();
     }
 
-    private void calculateVisualizationProperties() {
+    public void calculateVisualizationProperties() {
         neuronPoints.clear();
         if (neuralNetwork != null) {
             List<Integer> pointCounts = new ArrayList<>();
@@ -46,7 +47,7 @@ public class NetworkVisualizerComponent extends JComponent {
 
             var spacingX = (int) (getSize().getWidth() / (pointCounts.size() + 1));
             var spacingY = (int) (getSize().getHeight() / (maxPointCount + 1));
-            scale = Math.min(spacingX, spacingY) / 30;
+            visualizerUtils.setScale(Math.min(spacingX, spacingY) / 30);
 
             for (var i = 0; i < pointCounts.size(); i++) {
                 var topSpace = (int) ((getSize().getHeight() - (pointCounts.get(i) - 1) * spacingY) / 2);
@@ -68,10 +69,10 @@ public class NetworkVisualizerComponent extends JComponent {
     }
 
     private void drawInputsAndNeurons(Graphics2D g) {
-        neuronPoints.get(0).forEach(inputPoint -> drawNetworkInput(g, inputPoint));
+        neuronPoints.get(0).forEach(inputPoint -> visualizerUtils.drawNetworkInput(g, inputPoint));
 
         for (var i = 1; i < neuronPoints.size(); i++) {
-            neuronPoints.get(i).forEach(neuronPoint -> drawNeuron(g, neuronPoint));
+            neuronPoints.get(i).forEach(neuronPoint -> visualizerUtils.drawNeuron(g, neuronPoint));
         }
     }
 
@@ -83,9 +84,9 @@ public class NetworkVisualizerComponent extends JComponent {
             for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
                 var destinationPoint = neuronPoints.get(layerIndex + 1).get(neuronIndex);
                 for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
-                    drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, weights[layerIndex][neuronIndex][weightIndex]);
+                    visualizerUtils.drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, weights[layerIndex][neuronIndex][weightIndex]);
                 }
-                drawBias(g, destinationPoint, biases[layerIndex][neuronIndex]);
+                visualizerUtils.drawBias(g, destinationPoint, biases[layerIndex][neuronIndex]);
             }
         }
     }
@@ -108,70 +109,31 @@ public class NetworkVisualizerComponent extends JComponent {
     }
 
     private void calculateWeightsBounds() {
-        if (weightsLowerBound == null) {
-            weightsLowerBound = biases[0][0];
+        if (visualizerUtils.getWeightsLowerBound() == null) {
+            visualizerUtils.setWeightsLowerBound(biases[0][0]);
         }
-        if (weightsUpperBound == null) {
-            weightsUpperBound = weightsLowerBound;
+        if (visualizerUtils.getWeightsUpperBound() == null) {
+            visualizerUtils.setWeightsUpperBound(visualizerUtils.getWeightsLowerBound());
         }
 
         for (var layerIndex = 0; layerIndex < weights.length; layerIndex++) {
             for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
-                if (biases[layerIndex][neuronIndex] < weightsLowerBound) {
-                    weightsLowerBound = biases[layerIndex][neuronIndex];
+                if (biases[layerIndex][neuronIndex] < visualizerUtils.getWeightsLowerBound()) {
+                    visualizerUtils.setWeightsLowerBound(biases[layerIndex][neuronIndex]);
                 }
-                if (biases[layerIndex][neuronIndex] > weightsUpperBound) {
-                    weightsUpperBound = biases[layerIndex][neuronIndex];
+                if (biases[layerIndex][neuronIndex] > visualizerUtils.getWeightsUpperBound()) {
+                    visualizerUtils.setWeightsUpperBound(biases[layerIndex][neuronIndex]);
                 }
                 for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
-                    if (weights[layerIndex][neuronIndex][weightIndex] < weightsLowerBound) {
-                        weightsLowerBound = weights[layerIndex][neuronIndex][weightIndex];
+                    if (weights[layerIndex][neuronIndex][weightIndex] < visualizerUtils.getWeightsLowerBound()) {
+                        visualizerUtils.setWeightsLowerBound(weights[layerIndex][neuronIndex][weightIndex]);
                     }
-                    if (weights[layerIndex][neuronIndex][weightIndex] > weightsUpperBound) {
-                        weightsUpperBound = weights[layerIndex][neuronIndex][weightIndex];
+                    if (weights[layerIndex][neuronIndex][weightIndex] > visualizerUtils.getWeightsUpperBound()) {
+                        visualizerUtils.setWeightsUpperBound(weights[layerIndex][neuronIndex][weightIndex]);
                     }
                 }
             }
         }
-    }
-
-    private void drawNetworkInput(Graphics2D graphics, Point position) {
-        graphics.setColor(Color.black);
-        graphics.fillRect(position.x - 6 * scale, position.y - 6 * scale, 12 * scale, 12 * scale);
-    }
-
-    private void drawNeuron(Graphics2D graphics, Point position) {
-        graphics.setColor(Color.DARK_GRAY);
-        graphics.fillOval(position.x - 6 * scale, position.y - 6 * scale, 12 * scale, 12 * scale);
-    }
-
-    private void drawWeight(Graphics2D graphics,
-                            Point source,
-                            Point destination,
-                            double value) {
-        drawLine(graphics, source, destination, value, 0, 120, 240);
-    }
-
-    private void drawBias(Graphics2D graphics, Point neuronPosition, double value) {
-        drawLine(graphics, new Point(neuronPosition.x - 5 * scale, neuronPosition.y - 10 * scale), neuronPosition, value, 0, 240, 120);
-    }
-
-    private void drawLine(Graphics2D graphics,
-                          Point from,
-                          Point to,
-                          double value,
-                          int baseColorR,
-                          int baseColorG,
-                          int baseColorB) {
-        var valueScale = (value - weightsLowerBound) / (weightsUpperBound - weightsLowerBound);
-        graphics.setColor(new Color(
-                (int) (baseColorR + (255 - baseColorR) * (1 - valueScale)),
-                (int) (baseColorG + (255 - baseColorG) * (1 - valueScale)),
-                (int) (baseColorB + (255 - baseColorB) * (1 - valueScale)),
-                (int) (255 * valueScale)
-        ));
-        graphics.setStroke(new BasicStroke((float) (scale * (valueScale + 1))));
-        graphics.drawLine(from.x, from.y, to.x, to.y);
     }
 
     private static class ResizeListener extends ComponentAdapter {
@@ -180,6 +142,22 @@ public class NetworkVisualizerComponent extends JComponent {
             var component = (NetworkVisualizerComponent) e.getComponent();
             component.calculateVisualizationProperties();
             component.repaint();
+        }
+    }
+
+    private class NeuronClickListener extends MouseAdapter {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            for (var layerIndex = 0; layerIndex < neuronPoints.size() - 1; layerIndex++) {
+                for (var neuronIndex = 0; neuronIndex < neuronPoints.get(layerIndex + 1).size(); neuronIndex++) {
+                    var neuronPoint = neuronPoints.get(layerIndex + 1).get(neuronIndex);
+                    if (Math.abs(neuronPoint.getX() - e.getX()) < 6 * visualizerUtils.getScale() &&
+                            Math.abs(neuronPoint.getY() - e.getY()) < 6 * visualizerUtils.getScale()) {
+                        onNeuronClicked.accept(new NeuronVisualizerComponent(neuralNetwork, layerIndex, neuronIndex, visualizerUtils));
+                        return;
+                    }
+                }
+            }
         }
     }
 }
