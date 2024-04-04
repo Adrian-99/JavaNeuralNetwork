@@ -14,6 +14,14 @@ public class LinearActivationFunction implements ActivationFunction {
         this.intercept = 0.0;
     }
 
+    public double getSlope() {
+        return slope;
+    }
+
+    public double getIntercept() {
+        return intercept;
+    }
+
     @Override
     public double apply(double input) {
         return slope * input + intercept;

@@ -78,15 +78,15 @@ public class NetworkVisualizerComponent extends JComponent {
 
     private void drawWeightsAndBiases(Graphics2D g) {
         copyWeightsAndBiases();
-        calculateWeightsBounds();
+        calculateWeightsAbsBound();
 
         for (var layerIndex = 0; layerIndex < weights.length; layerIndex++) {
             for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
                 var destinationPoint = neuronPoints.get(layerIndex + 1).get(neuronIndex);
                 for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
-                    visualizerUtils.drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, weights[layerIndex][neuronIndex][weightIndex]);
+                    visualizerUtils.drawWeight(g, neuronPoints.get(layerIndex).get(weightIndex), destinationPoint, weights[layerIndex][neuronIndex][weightIndex], false);
                 }
-                visualizerUtils.drawBias(g, destinationPoint, biases[layerIndex][neuronIndex]);
+                visualizerUtils.drawBias(g, destinationPoint, biases[layerIndex][neuronIndex], false);
             }
         }
     }
@@ -108,28 +108,19 @@ public class NetworkVisualizerComponent extends JComponent {
         }
     }
 
-    private void calculateWeightsBounds() {
-        if (visualizerUtils.getWeightsLowerBound() == null) {
-            visualizerUtils.setWeightsLowerBound(biases[0][0]);
-        }
-        if (visualizerUtils.getWeightsUpperBound() == null) {
-            visualizerUtils.setWeightsUpperBound(visualizerUtils.getWeightsLowerBound());
+    private void calculateWeightsAbsBound() {
+        if (visualizerUtils.getWeightsAbsBound() == null) {
+            visualizerUtils.setWeightsAbsBound(Math.abs(biases[0][0]));
         }
 
         for (var layerIndex = 0; layerIndex < weights.length; layerIndex++) {
             for (var neuronIndex = 0; neuronIndex < weights[layerIndex].length; neuronIndex++) {
-                if (biases[layerIndex][neuronIndex] < visualizerUtils.getWeightsLowerBound()) {
-                    visualizerUtils.setWeightsLowerBound(biases[layerIndex][neuronIndex]);
-                }
-                if (biases[layerIndex][neuronIndex] > visualizerUtils.getWeightsUpperBound()) {
-                    visualizerUtils.setWeightsUpperBound(biases[layerIndex][neuronIndex]);
+                if (Math.abs(biases[layerIndex][neuronIndex]) > visualizerUtils.getWeightsAbsBound()) {
+                    visualizerUtils.setWeightsAbsBound(Math.abs(biases[layerIndex][neuronIndex]));
                 }
                 for (var weightIndex = 0; weightIndex < weights[layerIndex][neuronIndex].length; weightIndex++) {
-                    if (weights[layerIndex][neuronIndex][weightIndex] < visualizerUtils.getWeightsLowerBound()) {
-                        visualizerUtils.setWeightsLowerBound(weights[layerIndex][neuronIndex][weightIndex]);
-                    }
-                    if (weights[layerIndex][neuronIndex][weightIndex] > visualizerUtils.getWeightsUpperBound()) {
-                        visualizerUtils.setWeightsUpperBound(weights[layerIndex][neuronIndex][weightIndex]);
+                    if (Math.abs(weights[layerIndex][neuronIndex][weightIndex]) > visualizerUtils.getWeightsAbsBound()) {
+                        visualizerUtils.setWeightsAbsBound(Math.abs(weights[layerIndex][neuronIndex][weightIndex]));
                     }
                 }
             }

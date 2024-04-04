@@ -1,14 +1,20 @@
 package com.github.adrian99.neuralnetworkgui.component;
 
 import com.github.adrian99.neuralnetwork.NeuralNetwork;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
+import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
 import com.github.adrian99.neuralnetworkgui.util.VisualizerUtils;
+import org.scilab.forge.jlatexmath.TeXConstants;
+import org.scilab.forge.jlatexmath.TeXFormula;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class NeuronVisualizerComponent extends JComponent {
     private final List<Point> inputWeightsStartPoints = new ArrayList<>();
@@ -17,6 +23,7 @@ public class NeuronVisualizerComponent extends JComponent {
     private final int layerIndex;
     private final int neuronIndex;
     private final transient VisualizerUtils visualizerUtils;
+    private transient Image activationFunctionImage;
     private double[] inputWeights;
     private double [] outputWeights;
     private double bias;
@@ -41,10 +48,15 @@ public class NeuronVisualizerComponent extends JComponent {
                     neuralNetwork.getLayers()[layerIndex + 1].getNeurons().length :
                     0;
 
-            neuronPoint = new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
-
             var spacingY = (int) (getSize().getHeight() / (Math.max(inputWeightsCount, outputWeightsCount) + 1));
-            visualizerUtils.setScale(spacingY / 15);
+
+            if (visualizerUtils.setScale(spacingY / 7) && visualizerUtils.getScale() > 0) {
+                getActivationFunctionImage()
+                        .thenAccept(image -> activationFunctionImage = image)
+                        .thenRun(this::repaint);
+            }
+
+            neuronPoint = new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
 
             var topSpace = (int) ((getSize().getHeight() - (inputWeightsCount - 1) * spacingY) / 2);
             for (var i = 0; i < inputWeightsCount; i++) {
@@ -60,24 +72,61 @@ public class NeuronVisualizerComponent extends JComponent {
         }
     }
 
+    private CompletableFuture<Image> getActivationFunctionImage() {
+        return CompletableFuture.supplyAsync(() -> {
+            var neuron = neuralNetwork.getLayers()[layerIndex].getNeurons()[neuronIndex];
+            TeXFormula teXFormula = null;
+            var decimalFormat = new DecimalFormat("#.###");
+            if (neuron.getActivationFunction() instanceof LinearActivationFunction linearActivationFunction) {
+                teXFormula = new TeXFormula("f = %s \\cdot x + %s".formatted(
+                        decimalFormat.format(linearActivationFunction.getSlope()),
+                        decimalFormat.format(linearActivationFunction.getIntercept())
+                ));
+            } else if (neuron.getActivationFunction() instanceof LogisticActivationFunction logisticActivationFunction) {
+                teXFormula = new TeXFormula("f = \\frac{%s}{1 + e^{-%s \\cdot x}}".formatted(
+                        decimalFormat.format(logisticActivationFunction.getSupremum()),
+                        decimalFormat.format(logisticActivationFunction.getGrowthRate())
+                ));
+            }
+            if (teXFormula != null) {
+                return teXFormula.createBufferedImage(
+                        TeXConstants.STYLE_DISPLAY,
+                        visualizerUtils.getScale() * 1.5f,
+                        Color.white,
+                        Color.darkGray
+                );
+            } else {
+                return null;
+            }
+        });
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         drawWeightsAndBias((Graphics2D) g);
         visualizerUtils.drawNeuron((Graphics2D) g, neuronPoint);
+        if (activationFunctionImage != null) {
+            g.drawImage(
+                    activationFunctionImage,
+                    (int) neuronPoint.getX() - (activationFunctionImage.getWidth(null) / 2),
+                    (int) neuronPoint.getY() - (activationFunctionImage.getHeight(null) / 2),
+                    null
+            );
+        }
     }
 
     private void drawWeightsAndBias(Graphics2D g) {
         copyWeightsAndBias();
-        calculateWeightsBounds();
+        calculateWeightsAbsBound();
 
         for (var inputWeightIndex = 0; inputWeightIndex < inputWeights.length; inputWeightIndex++) {
-            visualizerUtils.drawWeight(g, inputWeightsStartPoints.get(inputWeightIndex), neuronPoint, inputWeights[inputWeightIndex]);
+            visualizerUtils.drawWeight(g, inputWeightsStartPoints.get(inputWeightIndex), neuronPoint, inputWeights[inputWeightIndex], true);
         }
         for (var outputWeightIndex = 0; outputWeightIndex < outputWeights.length; outputWeightIndex++) {
-            visualizerUtils.drawWeight(g, neuronPoint, outputWeightsEndPoints.get(outputWeightIndex), outputWeights[outputWeightIndex]);
+            visualizerUtils.drawWeight(g, outputWeightsEndPoints.get(outputWeightIndex), neuronPoint, outputWeights[outputWeightIndex], true);
         }
-        visualizerUtils.drawBias(g, neuronPoint, bias);
+        visualizerUtils.drawBias(g, neuronPoint, bias, true);
     }
 
     private void copyWeightsAndBias() {
@@ -96,34 +145,22 @@ public class NeuronVisualizerComponent extends JComponent {
         }
     }
 
-    private void calculateWeightsBounds() {
-        if (visualizerUtils.getWeightsLowerBound() == null) {
-            visualizerUtils.setWeightsLowerBound(bias);
-        }
-        if (visualizerUtils.getWeightsUpperBound() == null) {
-            visualizerUtils.setWeightsUpperBound(visualizerUtils.getWeightsLowerBound());
+    private void calculateWeightsAbsBound() {
+        if (visualizerUtils.getWeightsAbsBound() == null) {
+            visualizerUtils.setWeightsAbsBound(Math.abs(bias));
         }
         for (var weight : inputWeights) {
-            if (weight < visualizerUtils.getWeightsLowerBound()) {
-                visualizerUtils.setWeightsLowerBound(weight);
-            }
-            if (weight > visualizerUtils.getWeightsUpperBound()) {
-                visualizerUtils.setWeightsUpperBound(weight);
+            if (Math.abs(weight) > visualizerUtils.getWeightsAbsBound()) {
+                visualizerUtils.setWeightsAbsBound(Math.abs(weight));
             }
         }
         for (var weight : outputWeights) {
-            if (weight < visualizerUtils.getWeightsLowerBound()) {
-                visualizerUtils.setWeightsLowerBound(weight);
-            }
-            if (weight > visualizerUtils.getWeightsUpperBound()) {
-                visualizerUtils.setWeightsUpperBound(weight);
+            if (Math.abs(weight) > visualizerUtils.getWeightsAbsBound()) {
+                visualizerUtils.setWeightsAbsBound(Math.abs(weight));
             }
         }
-        if (bias < visualizerUtils.getWeightsLowerBound()) {
-            visualizerUtils.setWeightsLowerBound(bias);
-        }
-        if (bias > visualizerUtils.getWeightsUpperBound()) {
-            visualizerUtils.setWeightsUpperBound(bias);
+        if (Math.abs(bias) > visualizerUtils.getWeightsAbsBound()) {
+            visualizerUtils.setWeightsAbsBound(Math.abs(bias));
         }
     }
 

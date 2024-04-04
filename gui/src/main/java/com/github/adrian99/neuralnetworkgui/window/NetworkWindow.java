@@ -370,9 +370,10 @@ public class NetworkWindow extends JFrame {
 
     private void onNeuronClick(NeuronVisualizerComponent neuronVisualizerComponent) {
         this.neuronVisualizerComponent = neuronVisualizerComponent;
-        neuronVisualizerPanel.add(this.neuronVisualizerComponent, NEURON);
+        neuronVisualizerPanel.add(this.neuronVisualizerComponent);
         var backButton = new JButton("Back");
         backButton.addActionListener(e -> onBack());
+        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         neuronVisualizerPanel.add(backButton);
         visualizerLayout.show(visualizerPanel, NEURON);
     }

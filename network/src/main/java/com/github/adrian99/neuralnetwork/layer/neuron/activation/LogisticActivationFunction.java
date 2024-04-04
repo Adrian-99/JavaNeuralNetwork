@@ -14,6 +14,14 @@ public class LogisticActivationFunction implements ActivationFunction {
         this.growthRate = growthRate;
     }
 
+    public double getGrowthRate() {
+        return growthRate;
+    }
+
+    public double getSupremum() {
+        return supremum;
+    }
+
     @Override
     public double apply(double input) {
         return supremum / (1 + Math.exp(-growthRate * input));
