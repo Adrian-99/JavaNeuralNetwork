@@ -23,6 +23,7 @@ import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.component.NeuronVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
+import com.github.adrian99.neuralnetworkgui.util.StatisticsCollector;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -45,6 +46,7 @@ public class NetworkWindow extends JFrame {
     private final JButton pauseLearningButton;
     private final JButton resumeLearningButton;
     private final JButton testNetworkButton;
+    private final JButton showStatisticsButton;
     private final JPanel topInfoPanel1;
     private final JPanel topInfoPanel2;
     private final CardLayout visualizerLayout;
@@ -69,6 +71,7 @@ public class NetworkWindow extends JFrame {
     private transient LearningSupervisor learningSupervisor = null;
     private transient CompletableFuture<LearningStatisticsProvider> learningFuture = null;
     private Long lastDisplayUpdateMillis = null;
+    private transient StatisticsCollector statisticsCollector;
 
     public NetworkWindow() {
         setTitle("Neural network");
@@ -117,6 +120,12 @@ public class NetworkWindow extends JFrame {
         testNetworkButton = new JButton("Test network");
         testNetworkButton.addActionListener(event -> onTestNetwork());
         topButtonsPanel.add(testNetworkButton);
+
+        topButtonsPanel.add(new JSeparator(SwingConstants.VERTICAL));
+
+        showStatisticsButton = new JButton("Show statistics");
+        showStatisticsButton.addActionListener(event -> onShowStatistics());
+        topButtonsPanel.add(showStatisticsButton);
 
         updateButtons();
 
@@ -305,14 +314,18 @@ public class NetworkWindow extends JFrame {
             var dataProvider = c.crossValidationGroupsCount()
                     .map(groupsCount -> (DataProvider) new CrossValidationDataProvider(inputData, outputData, groupsCount))
                     .orElse(new SimpleDataProvider(inputData, outputData));
-            learningSupervisor = new LearningSupervisor(neuralNetwork, dataProvider);
+            if (learningSupervisor == null) {
+                learningSupervisor = new LearningSupervisor(neuralNetwork, dataProvider);
+            } else {
+                learningSupervisor.setDataProvider(dataProvider);
+            }
         }
         learningConfigurationData = c;
 
         learningConfiguration = new LearningSupervisor.Configuration(
                 new SumSquaredErrorFunction(),
                 new BackPropagationLearningFunction(learningConfigurationData.learningRate())
-        ).setUpdateCallback(s -> updateDisplay(s, false))
+        ).setUpdateCallback(s -> learningUpdateCallback(s, false))
                 .setEpochBatchSize(learningConfigurationData.epochBatchSize());
         learningConfigurationData.accuracyEndConditionValue()
                 .ifPresent(v -> learningConfiguration.addEndCondition(new AccuracyEndCondition(v)));
@@ -323,28 +336,37 @@ public class NetworkWindow extends JFrame {
         learningConfigurationData.timeEndConditionValue()
                 .ifPresent(v -> learningConfiguration.addEndCondition(new TimeEndCondition(v)));
 
+        if (statisticsCollector == null && learningConfigurationData.collectStatistics()) {
+            statisticsCollector = new StatisticsCollector();
+        }
+
         learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
-        learningFuture.whenComplete((s, e) -> updateDisplay(s, true));
+        learningFuture.whenComplete((s, e) -> learningUpdateCallback(s, true));
         updateButtons();
         updateTopInfo();
     }
 
-    private void updateDisplay(LearningStatisticsProvider stats, boolean learningFinished) {
+    private void learningUpdateCallback(LearningStatisticsProvider stats, boolean learningFinished) {
+        if (learningConfigurationData.collectStatistics() && statisticsCollector != null && stats != null) {
+            statisticsCollector.collect(stats);
+        }
         if (lastDisplayUpdateMillis == null ||
                 System.currentTimeMillis() - lastDisplayUpdateMillis >= learningConfigurationData.displayRefreshRate() * 1000 ||
                 learningFinished) {
-            if (neuronVisualizerComponent != null) {
-                neuronVisualizerComponent.repaint();
-            } else {
-                networkVisualizerComponent.repaint();
-            }
-            updateBottomInfo(stats);
-            if (learningFinished) {
-                updateTopInfo();
-                updateButtons();
-                lastDisplayUpdateMillis = null;
-            } else {
-                lastDisplayUpdateMillis = System.currentTimeMillis();
+            synchronized (visualizerPanel) {
+                if (neuronVisualizerComponent != null) {
+                    neuronVisualizerComponent.repaint();
+                } else {
+                    networkVisualizerComponent.repaint();
+                }
+                updateBottomInfo(stats);
+                if (learningFinished) {
+                    updateTopInfo();
+                    updateButtons();
+                    lastDisplayUpdateMillis = null;
+                } else {
+                    lastDisplayUpdateMillis = System.currentTimeMillis();
+                }
             }
         }
     }
@@ -358,7 +380,7 @@ public class NetworkWindow extends JFrame {
     private void onResumeLearning() {
         if (learningFuture != null && learningFuture.isCancelled()) {
             learningFuture = learningSupervisor.startLearningAsync(learningConfiguration);
-            learningFuture.whenComplete((s, e) -> updateDisplay(s, true));
+            learningFuture.whenComplete((s, e) -> learningUpdateCallback(s, true));
             updateButtons();
             updateTopInfo();
         }
@@ -366,6 +388,10 @@ public class NetworkWindow extends JFrame {
 
     private void onTestNetwork() {
         new NetworkTesterWindow(neuralNetwork);
+    }
+
+    private void onShowStatistics() {
+        new PlotCreatorWindow(statisticsCollector);
     }
 
     private void onNeuronClick(NeuronVisualizerComponent neuronVisualizerComponent) {
@@ -394,6 +420,7 @@ public class NetworkWindow extends JFrame {
         pauseLearningButton.setEnabled(learningFuture != null && !learningFuture.isDone());
         resumeLearningButton.setEnabled(learningFuture != null && learningFuture.isCancelled());
         testNetworkButton.setEnabled(neuralNetwork != null && (learningFuture == null || learningFuture.isDone()));
+        showStatisticsButton.setEnabled(learningConfigurationData != null && learningConfigurationData.collectStatistics() && (learningFuture == null || learningFuture.isDone()));
     }
 
     private void updateTopInfo() {
@@ -445,7 +472,7 @@ public class NetworkWindow extends JFrame {
     private void updateBottomInfo(LearningStatisticsProvider stats) {
         if (stats != null) {
             bottomEpochsLabel.setText(String.valueOf(stats.getLearningEpochsCompletedCount()));
-            bottomTimeLabel.setText(convertSecondsToTimer(stats.getTotalLearningTimeSeconds()));
+            bottomTimeLabel.setText(convertMillisToTimer(stats.getTotalLearningTimeMillis()));
             bottomAccuracyLabel.setText("%.3f".formatted(stats.getCurrentAccuracy()));
             bottomErrorLabel.setText("%.3f".formatted(stats.getCurrentError()));
 
@@ -477,9 +504,10 @@ public class NetworkWindow extends JFrame {
         }
     }
 
-    private String convertSecondsToTimer(long input) {
-        var minutes = input / 60;
-        var seconds = input % 60;
+    private String convertMillisToTimer(long input) {
+        var secondsTotal = input / 1000;
+        var minutes = secondsTotal / 60;
+        var seconds = secondsTotal % 60;
         if (minutes > 59) {
             var hours = minutes / 60;
             minutes = minutes % 60;

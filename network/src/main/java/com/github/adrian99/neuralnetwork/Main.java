@@ -108,11 +108,11 @@ public class Main {
 
     private static void printStats(LearningStatisticsProvider stats) {
         System.out.printf(
-                "Error: %f; Accuracy: %f; Epochs: %d; Time: %ds\n",
+                "Error: %f; Accuracy: %f; Epochs: %d; Time: %dms\n",
                 stats.getCurrentError(),
                 stats.getCurrentAccuracy(),
                 stats.getLearningEpochsCompletedCount(),
-                stats.getTotalLearningTimeSeconds()
+                stats.getTotalLearningTimeMillis()
         );
     }
 }

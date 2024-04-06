@@ -39,13 +39,25 @@ public class NetworkTesterWindow extends JDialog {
             addInputWithLabel(getContentPane(), input, "Input %d".formatted(i + 1), 0, i);
         }
 
+        addComponent(getContentPane(), Box.createRigidArea(new Dimension(0, 10)))
+                .gridX(0)
+                .gridY(networkInputsCount)
+                .gridWidth(2)
+                .done();
+
         var calculateButton = new JButton("Calculate outputs");
         calculateButton.addActionListener(e -> onCalculate());
         addComponent(getContentPane(), calculateButton)
                 .gridX(0)
-                .gridY(networkInputsCount)
+                .gridY(networkInputsCount + 1)
                 .gridWidth(2)
                 .fill(GridBagConstraints.HORIZONTAL)
+                .done();
+
+        addComponent(getContentPane(), Box.createRigidArea(new Dimension(0, 10)))
+                .gridX(0)
+                .gridY(networkInputsCount + 2)
+                .gridWidth(2)
                 .done();
 
         networkOutputsLabels = new ArrayList<>();
@@ -53,7 +65,7 @@ public class NetworkTesterWindow extends JDialog {
             var label = new JLabel("Output %d".formatted(i + 1));
             addComponent(getContentPane(), label)
                     .gridX(0)
-                    .gridY(networkInputsCount + 1 + i)
+                    .gridY(networkInputsCount + 3 + i)
                     .fill(GridBagConstraints.HORIZONTAL)
                     .done();
 
@@ -62,7 +74,7 @@ public class NetworkTesterWindow extends JDialog {
             valueLabel.setBorder(new LineBorder(Color.GRAY));
             addComponent(getContentPane(), valueLabel)
                     .gridX(1)
-                    .gridY(networkInputsCount + 1 + i)
+                    .gridY(networkInputsCount + 3 + i)
                     .fill(GridBagConstraints.HORIZONTAL)
                     .done();
             networkOutputsLabels.add(valueLabel);

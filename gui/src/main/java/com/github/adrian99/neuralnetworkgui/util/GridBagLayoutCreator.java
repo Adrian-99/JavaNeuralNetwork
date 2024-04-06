@@ -5,20 +5,20 @@ import java.awt.*;
 
 public class GridBagLayoutCreator {
     private final Container container;
-    private final JComponent component;
+    private final Component component;
     private final GridBagConstraints constraints;
 
-    private GridBagLayoutCreator(Container container, JComponent component) {
+    private GridBagLayoutCreator(Container container, Component component) {
         this.container = container;
         this.component = component;
         this.constraints = new GridBagConstraints();
     }
 
-    public static GridBagLayoutCreator addComponent(Container container, JComponent component) {
+    public static GridBagLayoutCreator addComponent(Container container, Component component) {
         return new GridBagLayoutCreator(container, component);
     }
 
-    public static void addInputWithLabel(Container container, JSpinner input, String labelText, int gridX, int gridY) {
+    public static void addInputWithLabel(Container container, Component input, String labelText, int gridX, int gridY) {
         var inputLabel = new JLabel(labelText);
         inputLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         inputLabel.setLabelFor(input);

@@ -13,9 +13,9 @@ import java.util.function.Consumer;
 
 public class LearningSupervisor implements LearningStatisticsProvider {
     private final NeuralNetwork neuralNetwork;
-    private final DataProvider dataProvider;
+    private DataProvider dataProvider;
     private long learningEpochsCompletedCount = 0;
-    private long totalLearningTimeSeconds = 0;
+    private long totalLearningTimeMillis = 0;
     private long lastStartSystemMillis = 0;
     private CompletableFuture<LearningStatisticsProvider> asyncLearningCompletableFuture = null;
 
@@ -24,9 +24,8 @@ public class LearningSupervisor implements LearningStatisticsProvider {
         this.dataProvider = dataProvider;
     }
 
-    @Override
-    public boolean isLearningInProgress() {
-        return lastStartSystemMillis != 0;
+    public void setDataProvider(DataProvider dataProvider) {
+        this.dataProvider = dataProvider;
     }
 
     @Override
@@ -45,9 +44,9 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     }
 
     @Override
-    public long getTotalLearningTimeSeconds() {
-        return totalLearningTimeSeconds +
-                (lastStartSystemMillis != 0 ? (System.currentTimeMillis() - lastStartSystemMillis) / 1000 : 0);
+    public long getTotalLearningTimeMillis() {
+        return totalLearningTimeMillis +
+                (lastStartSystemMillis != 0 ? (System.currentTimeMillis() - lastStartSystemMillis) : 0);
     }
 
     public void startLearning(Configuration configuration) {
@@ -61,7 +60,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
                     CompletableFuture.runAsync(() -> configuration.updateCallback.accept(this));
                 }
             }
-            totalLearningTimeSeconds += (System.currentTimeMillis() - lastStartSystemMillis) / 1000;
+            totalLearningTimeMillis += System.currentTimeMillis() - lastStartSystemMillis;
             asyncLearningCompletableFuture = null;
             lastStartSystemMillis = 0;
         } else {

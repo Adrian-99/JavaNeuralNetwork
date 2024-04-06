@@ -16,6 +16,7 @@ public class LearningConfiguratorWindow extends JDialog {
     private final JSpinner displayRefreshRateInput;
     private final JSpinner epochsBatchSizeInput;
     private final JSpinner learningRateInput;
+    private final JCheckBox collectStatisticsCheckbox;
     private final JCheckBox crossValidationCheckbox;
     private final JSpinner crossValidationGroupsCountInput;
     private final JCheckBox accuracyEndConditionCheckbox;
@@ -46,6 +47,7 @@ public class LearningConfiguratorWindow extends JDialog {
         displayRefreshRateInput = new JSpinner(new SpinnerNumberModel(configuration.displayRefreshRate(), 0.1, 60, 0.1));
         epochsBatchSizeInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 1000000, 1));
         learningRateInput = new JSpinner(new SpinnerNumberModel(configuration.learningRate(), -10000, 10000, 0.001));
+        collectStatisticsCheckbox = new JCheckBox("Collect statistics", configuration.collectStatistics());
 
         crossValidationCheckbox = new JCheckBox("Enable cross-validation", configuration.crossValidationGroupsCount().isPresent());
         crossValidationCheckbox.addItemListener(i -> drawForm());
@@ -78,6 +80,13 @@ public class LearningConfiguratorWindow extends JDialog {
         addInputWithLabel(getContentPane(), epochsBatchSizeInput, "Network epochs batch size", 0, rowIndex++);
 
         addInputWithLabel(getContentPane(), learningRateInput, "Learning rate", 0, rowIndex++);
+
+        addComponent(getContentPane(), collectStatisticsCheckbox)
+                .gridX(0)
+                .gridY(rowIndex++)
+                .gridWidth(2)
+                .fill(GridBagConstraints.HORIZONTAL)
+                .done();
 
         rowIndex = addCheckboxAndInput(
                 crossValidationCheckbox,
@@ -146,6 +155,7 @@ public class LearningConfiguratorWindow extends JDialog {
                 (Double) displayRefreshRateInput.getValue(),
                 (Integer) epochsBatchSizeInput.getValue(),
                 (Double) learningRateInput.getValue(),
+                collectStatisticsCheckbox.isSelected(),
                 crossValidationCheckbox.isSelected() ? Optional.of((Integer) crossValidationGroupsCountInput.getValue()) : Optional.empty(),
                 accuracyEndConditionCheckbox.isSelected() ? Optional.of((Double) desiredAccuracyInput.getValue()) : Optional.empty(),
                 epochsCountEndConditionCheckbox.isSelected() ? Optional.of((Integer) desiredEpochsCountInput.getValue()) : Optional.empty(),
