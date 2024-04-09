@@ -208,6 +208,7 @@ public class NetworkWindow extends JFrame {
             learningConfigurationData = null;
             learningSupervisor = null;
             learningFuture = null;
+            statisticsCollector = null;
 
             updateButtons();
             updateTopInfo();
@@ -227,6 +228,7 @@ public class NetworkWindow extends JFrame {
                 learningConfigurationData = null;
                 learningSupervisor = null;
                 learningFuture = null;
+                statisticsCollector = null;
             } catch (IOException | ClassNotFoundException e) {
                 JOptionPane.showMessageDialog(
                         getContentPane(),
@@ -272,6 +274,7 @@ public class NetworkWindow extends JFrame {
                     learningFuture = null;
                     previousCrossValidationGroupsCount = null;
                     learningConfigurationData = null;
+                    statisticsCollector = null;
                 } else {
                     JOptionPane.showMessageDialog(
                             getContentPane(),
