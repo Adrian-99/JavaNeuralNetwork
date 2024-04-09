@@ -20,3 +20,18 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+jar {
+    manifest {
+        attributes('Main-Class': 'com.github.adrian99.neuralnetworkgui.Main')
+    }
+}
+
+tasks.register('fatJar', Jar) {
+    manifest.from jar.manifest
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    with jar
+}
