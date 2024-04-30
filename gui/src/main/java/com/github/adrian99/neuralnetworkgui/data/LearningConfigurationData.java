@@ -16,7 +16,7 @@ public record LearningConfigurationData(
     public LearningConfigurationData() {
         this(
                 0.5,
-                100,
+                1000,
                 1,
                 true,
                 Optional.empty(),

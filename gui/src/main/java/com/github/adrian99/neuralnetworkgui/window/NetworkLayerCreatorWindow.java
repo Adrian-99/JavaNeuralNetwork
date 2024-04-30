@@ -2,7 +2,6 @@ package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.activation.UnitStepActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetworkgui.data.NetworkLayerData;
@@ -30,7 +29,6 @@ public class NetworkLayerCreatorWindow extends JDialog {
         logisticFunctionProperties.put("Growth rate", 1d);
         logisticFunctionProperties.put("Supremum", 1d);
         ACTIVATION_FUNCTION_PROPERTIES.put(LogisticActivationFunction.class.getSimpleName(), logisticFunctionProperties);
-        ACTIVATION_FUNCTION_PROPERTIES.put(UnitStepActivationFunction.class.getSimpleName(), Collections.emptyMap());
 
         WEIGHT_INITIALIZATION_FUNCTIONS = new String[] {
                 XavierWeightInitializationFunction.class.getSimpleName(),

@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
+
+import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
 public class LearningSupervisor implements LearningStatisticsProvider {
     private final NeuralNetwork neuralNetwork;
@@ -52,14 +55,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     public void startLearning(Configuration configuration) {
         if (lastStartSystemMillis == 0) {
             lastStartSystemMillis = System.currentTimeMillis();
-            while (noEndConditionFulfilled(configuration.endConditions) && isAsyncLearningNotCancelled()) {
-                for (var i = 0; i < configuration.epochBatchSize && isAsyncLearningNotCancelled(); i++) {
-                    singleEpochLearning(configuration.errorFunction, configuration.learningFunction);
-                }
-                if (configuration.updateCallback != null) {
-                    CompletableFuture.runAsync(() -> configuration.updateCallback.accept(this));
-                }
-            }
+            learning(configuration);
             totalLearningTimeMillis += System.currentTimeMillis() - lastStartSystemMillis;
             asyncLearningCompletableFuture = null;
             lastStartSystemMillis = 0;
@@ -86,18 +82,47 @@ public class LearningSupervisor implements LearningStatisticsProvider {
         return asyncLearningCompletableFuture == null || !asyncLearningCompletableFuture.isCancelled();
     }
 
-    private void singleEpochLearning(ErrorFunction errorFunction, LearningFunction learningFunction) {
-        var epochData = dataProvider.getData();
-        neuralNetwork.learnSingleEpoch(epochData.learningData().getInputs(), epochData.learningData().getTargets(), errorFunction, learningFunction);
+    private void learning(Configuration configuration) {
+        var nextUpdateAtEpochs = learningEpochsCompletedCount + configuration.epochBatchSize;
+        while (noEndConditionFulfilled(configuration.endConditions) && isAsyncLearningNotCancelled()) {
+            while (learningEpochsCompletedCount < nextUpdateAtEpochs && isAsyncLearningNotCancelled()) {
+                learning(configuration.errorFunction, configuration.learningFunction);
+            }
+            if (configuration.updateCallback != null) {
+                CompletableFuture.runAsync(() -> configuration.updateCallback.accept(this));
+            }
+            while (nextUpdateAtEpochs <= learningEpochsCompletedCount) {
+                nextUpdateAtEpochs += configuration.epochBatchSize;
+            }
+        }
+    }
+
+    private void learning(ErrorFunction errorFunction, LearningFunction learningFunction) {
+        var learningData = dataProvider.getData().learningData();
+        if (learningData.getInputs().length == learningData.getTargets().length) {
+            IntStream.range(0, learningData.getInputs().length)
+                    .boxed()
+                    .collect(toShuffledList())
+                    .forEach(i -> {
+                        neuralNetwork.learnSingleEpoch(
+                                learningData.getInputs()[i],
+                                learningData.getTargets()[i],
+                                errorFunction,
+                                learningFunction
+                        );
+                        learningEpochsCompletedCount++;
+                    });
+        } else {
+            throw new IllegalStateException("Input sets and target output sets counts mismatch: " + learningData.getInputs().length + " != " + learningData.getTargets().length);
+        }
         dataProvider.update(neuralNetwork, errorFunction);
-        learningEpochsCompletedCount++;
     }
 
     public static class Configuration {
         private final ErrorFunction errorFunction;
         private final LearningFunction learningFunction;
         private final List<EndCondition> endConditions = new ArrayList<>();
-        private int epochBatchSize = 10;
+        private int epochBatchSize = 1000;
         private Consumer<LearningStatisticsProvider> updateCallback = null;
 
         public Configuration(ErrorFunction errorFunction, LearningFunction learningFunction) {

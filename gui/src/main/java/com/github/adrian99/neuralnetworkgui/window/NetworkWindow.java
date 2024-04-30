@@ -5,7 +5,6 @@ import com.github.adrian99.neuralnetwork.data.csv.CsvDataLoader;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
-import com.github.adrian99.neuralnetwork.layer.neuron.activation.UnitStepActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.WeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
@@ -356,7 +355,6 @@ public class NetworkWindow extends JFrame {
         if (lastDisplayUpdateMillis == null ||
                 System.currentTimeMillis() - lastDisplayUpdateMillis >= learningConfigurationData.displayRefreshRate() * 1000 ||
                 learningFinished) {
-            synchronized (visualizerPanel) {
                 if (neuronVisualizerComponent != null) {
                     neuronVisualizerComponent.repaint();
                 } else {
@@ -370,7 +368,6 @@ public class NetworkWindow extends JFrame {
                 } else {
                     lastDisplayUpdateMillis = System.currentTimeMillis();
                 }
-            }
         }
     }
 
@@ -427,61 +424,65 @@ public class NetworkWindow extends JFrame {
     }
 
     private void updateTopInfo() {
-        topInfoPanel1.removeAll();
-        topInfoPanel2.removeAll();
-        if (neuralNetwork == null) {
-            var label = new JLabel("Missing neural network");
-            label.setForeground(Color.red);
-            topInfoPanel1.add(label);
-        } else if (inputData == null || outputData == null) {
-            var label = new JLabel("Missing learning data");
-            label.setForeground(Color.red);
-            topInfoPanel1.add(label);
-        } else {
-            topInfoPanel1.add(new JLabel(dataImportInfo));
-            if (learningConfigurationData != null) {
-                var crossValidationInfoText = "Cross-validation: %s".formatted(
-                        learningConfigurationData.crossValidationGroupsCount()
-                                .map("Enabled (%d groups)"::formatted)
-                                .orElse("Disabled")
-                );
-                topInfoPanel1.add(new JLabel(crossValidationInfoText));
+        synchronized (topInfoPanel1) {
+            topInfoPanel1.removeAll();
+            topInfoPanel2.removeAll();
+            if (neuralNetwork == null) {
+                var label = new JLabel("Missing neural network");
+                label.setForeground(Color.red);
+                topInfoPanel1.add(label);
+            } else if (inputData == null || outputData == null) {
+                var label = new JLabel("Missing learning data");
+                label.setForeground(Color.red);
+                topInfoPanel1.add(label);
+            } else {
+                topInfoPanel1.add(new JLabel(dataImportInfo));
+                if (learningConfigurationData != null) {
+                    var crossValidationInfoText = "Cross-validation: %s".formatted(
+                            learningConfigurationData.crossValidationGroupsCount()
+                                    .map("Enabled (%d groups)"::formatted)
+                                    .orElse("Disabled")
+                    );
+                    topInfoPanel1.add(new JLabel(crossValidationInfoText));
 
-                topInfoPanel2.add(new JLabel("Epochs batch size: %d".formatted(learningConfigurationData.epochBatchSize())));
-                topInfoPanel2.add(new JLabel("Learning rate: %.3f".formatted(learningConfigurationData.learningRate())));
-                if (learningConfigurationData.accuracyEndConditionValue().isPresent() ||
-                        learningConfigurationData.epochsCountEndConditionValue().isPresent() ||
-                        learningConfigurationData.errorEndConditionValue().isPresent() ||
-                        learningConfigurationData.timeEndConditionValue().isPresent()) {
-                    var endConditionsTexts = new ArrayList<String>();
-                    learningConfigurationData.accuracyEndConditionValue()
-                            .ifPresent(v -> endConditionsTexts.add("accuracy %.3f".formatted(v)));
-                    learningConfigurationData.epochsCountEndConditionValue()
-                            .ifPresent(v -> endConditionsTexts.add("epochs %d".formatted(v)));
-                    learningConfigurationData.errorEndConditionValue()
-                            .ifPresent(v -> endConditionsTexts.add("error %.3f".formatted(v)));
-                    learningConfigurationData.timeEndConditionValue()
-                            .ifPresent(v -> endConditionsTexts.add("time %ds".formatted(v)));
-                    topInfoPanel2.add(new JLabel("End conditions: " + endConditionsTexts));
+                    topInfoPanel2.add(new JLabel("Epochs batch size: %d".formatted(learningConfigurationData.epochBatchSize())));
+                    topInfoPanel2.add(new JLabel("Learning rate: %.3f".formatted(learningConfigurationData.learningRate())));
+                    if (learningConfigurationData.accuracyEndConditionValue().isPresent() ||
+                            learningConfigurationData.epochsCountEndConditionValue().isPresent() ||
+                            learningConfigurationData.errorEndConditionValue().isPresent() ||
+                            learningConfigurationData.timeEndConditionValue().isPresent()) {
+                        var endConditionsTexts = new ArrayList<String>();
+                        learningConfigurationData.accuracyEndConditionValue()
+                                .ifPresent(v -> endConditionsTexts.add("accuracy %.3f".formatted(v)));
+                        learningConfigurationData.epochsCountEndConditionValue()
+                                .ifPresent(v -> endConditionsTexts.add("epochs %d".formatted(v)));
+                        learningConfigurationData.errorEndConditionValue()
+                                .ifPresent(v -> endConditionsTexts.add("error %.3f".formatted(v)));
+                        learningConfigurationData.timeEndConditionValue()
+                                .ifPresent(v -> endConditionsTexts.add("time %ds".formatted(v)));
+                        topInfoPanel2.add(new JLabel("End conditions: " + endConditionsTexts));
+                    }
                 }
             }
+            topInfoPanel1.revalidate();
+            topInfoPanel1.repaint();
+            topInfoPanel2.revalidate();
+            topInfoPanel2.repaint();
         }
-        topInfoPanel1.revalidate();
-        topInfoPanel1.repaint();
-        topInfoPanel2.revalidate();
-        topInfoPanel2.repaint();
     }
 
     private void updateBottomInfo(LearningStatisticsProvider stats) {
-        if (stats != null) {
-            bottomEpochsLabel.setText(String.valueOf(stats.getLearningEpochsCompletedCount()));
-            bottomTimeLabel.setText(convertMillisToTimer(stats.getTotalLearningTimeMillis()));
-            bottomAccuracyLabel.setText("%.3f".formatted(stats.getCurrentAccuracy()));
-            bottomErrorLabel.setText("%.3f".formatted(stats.getCurrentError()));
+        synchronized (bottomInfoPanel) {
+            if (stats != null) {
+                bottomEpochsLabel.setText(String.valueOf(stats.getLearningEpochsCompletedCount()));
+                bottomTimeLabel.setText(convertMillisToTimer(stats.getTotalLearningTimeMillis()));
+                bottomAccuracyLabel.setText("%.3f".formatted(stats.getCurrentAccuracy()));
+                bottomErrorLabel.setText("%.3f".formatted(stats.getCurrentError()));
 
-            bottomInfoPanel.setVisible(true);
-            bottomInfoPanel.revalidate();
-            bottomInfoPanel.repaint();
+                bottomInfoPanel.setVisible(true);
+                bottomInfoPanel.revalidate();
+                bottomInfoPanel.repaint();
+            }
         }
     }
 
@@ -490,8 +491,6 @@ public class NetworkWindow extends JFrame {
             return new LinearActivationFunction(functionParameters.get(0), functionParameters.get(1));
         } else if (functionName.equals(LogisticActivationFunction.class.getSimpleName())) {
             return new LogisticActivationFunction(functionParameters.get(0), functionParameters.get(1));
-        } else if (functionName.equals(UnitStepActivationFunction.class.getSimpleName())) {
-            return new UnitStepActivationFunction();
         } else {
             throw new IllegalArgumentException("Unknown activation function class: " + functionName);
         }

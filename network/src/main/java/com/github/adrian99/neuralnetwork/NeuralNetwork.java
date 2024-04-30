@@ -9,9 +9,6 @@ import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
-
-import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 
 public abstract class NeuralNetwork implements Serializable {
     public abstract NeuronsLayer[] getLayers();
@@ -21,22 +18,13 @@ public abstract class NeuralNetwork implements Serializable {
 
     protected abstract void calculateNewNeuronWeights(LearningFunction learningFunction, double[] inputs);
 
-    public void learnSingleEpoch(double[][] inputSets,
-                                 int[][] targetOutputSets,
+    public void learnSingleEpoch(double[] inputs,
+                                 int[] targets,
                                  ErrorFunction errorFunction,
                                  LearningFunction learningFunction) {
-        if (inputSets.length == targetOutputSets.length) {
-            IntStream.range(0, inputSets.length)
-                    .boxed()
-                    .collect(toShuffledList())
-                    .forEach(i -> {
-                        activate(inputSets[i]);
-                        calculateNeuronErrors(errorFunction, targetOutputSets[i]);
-                        calculateNewNeuronWeights(learningFunction, inputSets[i]);
-                    });
-        } else {
-            throw new IllegalArgumentException("Input sets and target output sets counts mismatch: " + inputSets.length + " != " + targetOutputSets.length);
-        }
+        activate(inputs);
+        calculateNeuronErrors(errorFunction, targets);
+        calculateNewNeuronWeights(learningFunction, inputs);
     }
 
     public double[][] activate(double[][] inputSets) {

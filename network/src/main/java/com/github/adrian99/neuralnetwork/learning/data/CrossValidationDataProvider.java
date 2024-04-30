@@ -12,8 +12,10 @@ import static com.github.adrian99.neuralnetwork.util.Utils.toShuffledList;
 public class CrossValidationDataProvider extends DataProvider {
     private final int groupsCount;
     private final List<Set<Integer>> groupsIndexes;
-    private final List<Double> accuracyHistory;
-    private final List<Double> errorHistory;
+    private final List<Double> accuracyBuffer;
+    private final List<Double> errorBuffer;
+    private double accuracy = 0.0;
+    private double error = Double.MAX_VALUE;
     private int currentValidationGroupIndex;
     private InputsAndTargets currentValidationData;
 
@@ -23,9 +25,9 @@ public class CrossValidationDataProvider extends DataProvider {
             if (groupsCount <= inputs.length) {
                 this.groupsCount = groupsCount;
                 groupsIndexes = new ArrayList<>();
-                accuracyHistory = new ArrayList<>();
-                errorHistory = new ArrayList<>();
-                currentValidationGroupIndex = groupsCount;
+                accuracyBuffer = new ArrayList<>();
+                errorBuffer = new ArrayList<>();
+                calculateNewGroups();
             } else {
                 throw new IllegalArgumentException("Groups count must not be greater than inputs length");
             }
@@ -36,11 +38,6 @@ public class CrossValidationDataProvider extends DataProvider {
 
     @Override
     public LearningAndValidationData getData() {
-        currentValidationGroupIndex++;
-        if (currentValidationGroupIndex >= groupsCount) {
-            calculateNewGroups();
-        }
-
         var learningInputs = new ArrayList<double[]>();
         var learningTargets = new ArrayList<int[]>();
         var validationInputs = new ArrayList<double[]>();
@@ -70,28 +67,27 @@ public class CrossValidationDataProvider extends DataProvider {
     @Override
     public void update(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
         var networkOutputs = neuralNetwork.activate(currentValidationData.getInputs());
+        accuracyBuffer.add(Statistics.accuracy(networkOutputs, currentValidationData.getTargets()));
+        errorBuffer.add(Statistics.error(networkOutputs, currentValidationData.getTargets(), errorFunction));
 
-        var currentAccuracy = Statistics.accuracy(networkOutputs, currentValidationData.getTargets());
-        if (accuracyHistory.size() >= groupsCount) {
-            accuracyHistory.remove(0);
+        currentValidationGroupIndex++;
+        if (currentValidationGroupIndex >= groupsCount) {
+            accuracy = accuracyBuffer.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            accuracyBuffer.clear();
+            error = errorBuffer.stream().mapToDouble(Double::doubleValue).average().orElse(Double.MAX_VALUE);
+            errorBuffer.clear();
+            calculateNewGroups();
         }
-        accuracyHistory.add(currentAccuracy);
-
-        var currentError = Statistics.error(networkOutputs, currentValidationData.getTargets(), errorFunction);
-        if (errorHistory.size() >= groupsCount) {
-            errorHistory.remove(0);
-        }
-        errorHistory.add(currentError);
     }
 
     @Override
     public double getAccuracy() {
-        return accuracyHistory.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        return accuracy;
     }
 
     @Override
     public double getError() {
-        return errorHistory.stream().mapToDouble(Double::doubleValue).average().orElse(Double.MAX_VALUE);
+        return error;
     }
 
     private void calculateNewGroups() {
