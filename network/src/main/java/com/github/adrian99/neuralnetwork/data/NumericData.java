@@ -16,7 +16,7 @@ public class NumericData {
     }
 
     public NumericData normalize(int columnIndex) {
-        return normalize(columnIndex, -1, 1);
+        return normalize(columnIndex, 0, 1);
     }
 
     public NumericData normalize(int columnIndex, double targetMin, double targetMax) {
@@ -38,20 +38,37 @@ public class NumericData {
                 var targetDiff = targetMax - targetMin;
                 columns.set(
                         columnIndex,
-                        columns.get(columnIndex)
-                                .stream()
+                        column.stream()
                                 .map(value -> (value - finalMin) / diff * targetDiff + targetMin)
                                 .collect(Collectors.toCollection(ArrayList::new))
                 );
             } else {
                 columns.set(
                         columnIndex,
-                        columns.get(columnIndex)
-                                .stream()
+                        column.stream()
                                 .map(value -> 0.0)
                                 .collect(Collectors.toCollection(ArrayList::new))
                 );
             }
+        }
+        return this;
+    }
+
+    public NumericData standardize(int columnIndex) {
+        var column = columns.get(columnIndex);
+        if (!column.isEmpty()) {
+            var mean = column.stream().mapToDouble(Double::doubleValue).sum() / column.size();
+            var standardDeviation = Math.sqrt(
+                    column.stream().mapToDouble(Double::doubleValue)
+                            .map(value -> Math.pow(value - mean, 2))
+                            .sum() / (column.size() - 1)
+            );
+            columns.set(
+                    columnIndex,
+                    column.stream()
+                            .map(value -> (value - mean) / standardDeviation)
+                            .collect(Collectors.toCollection(ArrayList::new))
+            );
         }
         return this;
     }
