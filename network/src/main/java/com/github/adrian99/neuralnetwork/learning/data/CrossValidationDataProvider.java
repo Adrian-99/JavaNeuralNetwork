@@ -37,7 +37,7 @@ public class CrossValidationDataProvider extends DataProvider {
     }
 
     @Override
-    public LearningAndValidationData getData() {
+    public InputsAndTargets getLearningData() {
         var learningInputs = new ArrayList<double[]>();
         var learningTargets = new ArrayList<int[]>();
         var validationInputs = new ArrayList<double[]>();
@@ -58,14 +58,11 @@ public class CrossValidationDataProvider extends DataProvider {
 
         currentValidationData = new InputsAndTargets(validationInputs.toArray(double[][]::new), validationTargets.toArray(int[][]::new));
 
-        return new LearningAndValidationData(
-                new InputsAndTargets(learningInputs.toArray(double[][]::new), learningTargets.toArray(int[][]::new)),
-                currentValidationData
-        );
+        return new InputsAndTargets(learningInputs.toArray(double[][]::new), learningTargets.toArray(int[][]::new));
     }
 
     @Override
-    public void update(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
+    public void performValidation(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
         var networkOutputs = neuralNetwork.activate(currentValidationData.getInputs());
         accuracyBuffer.add(Statistics.accuracy(networkOutputs, currentValidationData.getTargets()));
         errorBuffer.add(Statistics.error(networkOutputs, currentValidationData.getTargets(), errorFunction));

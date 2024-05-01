@@ -98,7 +98,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
     }
 
     private void learning(ErrorFunction errorFunction, LearningFunction learningFunction) {
-        var learningData = dataProvider.getData().learningData();
+        var learningData = dataProvider.getLearningData();
         if (learningData.getInputs().length == learningData.getTargets().length) {
             IntStream.range(0, learningData.getInputs().length)
                     .boxed()
@@ -115,7 +115,7 @@ public class LearningSupervisor implements LearningStatisticsProvider {
         } else {
             throw new IllegalStateException("Input sets and target output sets counts mismatch: " + learningData.getInputs().length + " != " + learningData.getTargets().length);
         }
-        dataProvider.update(neuralNetwork, errorFunction);
+        dataProvider.performValidation(neuralNetwork, errorFunction);
     }
 
     public static class Configuration {

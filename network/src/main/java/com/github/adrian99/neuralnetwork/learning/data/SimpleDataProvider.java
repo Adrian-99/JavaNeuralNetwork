@@ -5,7 +5,7 @@ import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import com.github.adrian99.neuralnetwork.util.Statistics;
 
 public class SimpleDataProvider extends DataProvider {
-    private final LearningAndValidationData data;
+    private final InputsAndTargets data;
     private NeuralNetwork neuralNetwork;
     private ErrorFunction errorFunction;
     private double[][] networkOutputs;
@@ -13,17 +13,16 @@ public class SimpleDataProvider extends DataProvider {
 
     public SimpleDataProvider(double[][] inputs, int[][] targets) {
         super(inputs, targets);
-        var inputsAndTargets = new InputsAndTargets(inputs, targets);
-        data = new LearningAndValidationData(inputsAndTargets, inputsAndTargets);
+        data = new InputsAndTargets(inputs, targets);
     }
 
     @Override
-    public LearningAndValidationData getData() {
+    public InputsAndTargets getLearningData() {
         return data;
     }
 
     @Override
-    public void update(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
+    public void performValidation(NeuralNetwork neuralNetwork, ErrorFunction errorFunction) {
         this.neuralNetwork = neuralNetwork;
         this.errorFunction = errorFunction;
         networkOutputsUpdateRequired = true;
@@ -32,7 +31,7 @@ public class SimpleDataProvider extends DataProvider {
     @Override
     public double getAccuracy() {
         if (tryToUpdateNetworkOutputs()) {
-            return Statistics.accuracy(networkOutputs, data.validationData().getTargets());
+            return Statistics.accuracy(networkOutputs, data.getTargets());
         } else {
             return 0;
         }
@@ -41,7 +40,7 @@ public class SimpleDataProvider extends DataProvider {
     @Override
     public double getError() {
         if (tryToUpdateNetworkOutputs()) {
-            return Statistics.error(networkOutputs, data.validationData().getTargets(), errorFunction);
+            return Statistics.error(networkOutputs, data.getTargets(), errorFunction);
         } else {
             return Double.MAX_VALUE;
         }
@@ -49,7 +48,7 @@ public class SimpleDataProvider extends DataProvider {
 
     private boolean tryToUpdateNetworkOutputs() {
         if (networkOutputsUpdateRequired && neuralNetwork != null) {
-            networkOutputs = neuralNetwork.activate(data.validationData().getInputs());
+            networkOutputs = neuralNetwork.activate(data.getInputs());
             networkOutputsUpdateRequired = false;
         }
         return networkOutputs != null;
