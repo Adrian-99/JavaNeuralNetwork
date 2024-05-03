@@ -1,7 +1,6 @@
 package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetwork.NeuralNetwork;
-import com.github.adrian99.neuralnetwork.data.csv.CsvDataLoader;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.ActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
@@ -11,17 +10,20 @@ import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.Xavie
 import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
 import com.github.adrian99.neuralnetwork.learning.data.CrossValidationDataProvider;
 import com.github.adrian99.neuralnetwork.learning.data.DataProvider;
+import com.github.adrian99.neuralnetwork.learning.data.InputsAndTargets;
 import com.github.adrian99.neuralnetwork.learning.data.SimpleDataProvider;
 import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
+import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.component.NeuronVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
+import com.github.adrian99.neuralnetworkgui.util.DataImportUtils;
 import com.github.adrian99.neuralnetworkgui.util.StatisticsCollector;
 
 import javax.swing.*;
@@ -58,12 +60,12 @@ public class NetworkWindow extends JFrame {
     private final JLabel bottomAccuracyLabel;
     private final JLabel bottomErrorLabel;
     private final JFileChooser fileChooser = new JFileChooser();
+    private final transient ErrorFunction errorFunction = new SumSquaredErrorFunction();
 
     private NeuralNetwork neuralNetwork = null;
     private NeuronVisualizerComponent neuronVisualizerComponent = null;
     private String dataImportInfo;
-    private double[][] inputData;
-    private int[][] outputData;
+    private transient InputsAndTargets inputsAndTargets;
     private Integer previousCrossValidationGroupsCount = null;
     private transient LearningConfigurationData learningConfigurationData = null;
     private transient LearningSupervisor.Configuration learningConfiguration = null;
@@ -201,8 +203,7 @@ public class NetworkWindow extends JFrame {
                     getWeightInitializationFunction(lastLayerData.weightInitializationFunctionClass())
             );
             networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
-            inputData = null;
-            outputData = null;
+            inputsAndTargets = null;
             previousCrossValidationGroupsCount = null;
             learningConfigurationData = null;
             learningSupervisor = null;
@@ -221,8 +222,7 @@ public class NetworkWindow extends JFrame {
             try (var objectInputStream = new ObjectInputStream(new FileInputStream(file))) {
                 neuralNetwork = (NeuralNetwork) objectInputStream.readObject();
                 networkVisualizerComponent.setNeuralNetwork(neuralNetwork);
-                inputData = null;
-                outputData = null;
+                inputsAndTargets = null;
                 previousCrossValidationGroupsCount = null;
                 learningConfigurationData = null;
                 learningSupervisor = null;
@@ -259,39 +259,20 @@ public class NetworkWindow extends JFrame {
     }
 
     private void onImportData() {
-        if (neuralNetwork != null && fileChooser.showOpenDialog(getContentPane()) == JFileChooser.APPROVE_OPTION) {
-            var file = fileChooser.getSelectedFile();
-            try {
-                var numericData = new CsvDataLoader(file).toNumericData();
-                var networkInputsCount = neuralNetwork.getLayers()[0].getNeurons()[0].getWeights().length;
-                var networkOutputsCount = neuralNetwork.getLayers()[neuralNetwork.getLayers().length - 1].getNeurons().length;
-                if (numericData.getColumnsCount() >= networkInputsCount + networkOutputsCount) {
-                    inputData = numericData.toDoubleArray(0, networkInputsCount - 1);
-                    outputData = numericData.toIntArray(networkInputsCount, networkInputsCount + networkOutputsCount - 1);
-                    dataImportInfo = "Learning data: %s (%d rows)".formatted(file.getName(), inputData.length);
+        if (neuralNetwork != null && DataImportUtils.importFromFile(
+                fileChooser,
+                getContentPane(),
+                neuralNetwork,
+                (file, data) -> {
+                    inputsAndTargets = data;
+                    dataImportInfo = "Learning data: %s (%d rows)".formatted(file.getName(), data.getInputs().length);
                     learningSupervisor = null;
                     learningFuture = null;
                     previousCrossValidationGroupsCount = null;
                     learningConfigurationData = null;
                     statisticsCollector = null;
-                } else {
-                    JOptionPane.showMessageDialog(
-                            getContentPane(),
-                            "Not enough columns of data:\n" +
-                                    "Neural network has " + networkInputsCount + " inputs and " + networkOutputsCount + " outputs\n" +
-                                    "Expected at least " + (networkInputsCount + networkOutputsCount) + " columns of data, got " + numericData.getColumnsCount(),
-                            "Incorrect data error",
-                            JOptionPane.WARNING_MESSAGE
-                    );
                 }
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(
-                        getContentPane(),
-                        "Error occurred while importing data from file:\n" + e.getMessage(),
-                        "Importing error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
+        )) {
             updateButtons();
             updateTopInfo();
             bottomInfoPanel.setVisible(false);
@@ -301,9 +282,13 @@ public class NetworkWindow extends JFrame {
     private void onStartLearning() {
         if (learningFuture == null || learningFuture.isDone()) {
             if (learningConfigurationData != null) {
-                new LearningConfiguratorWindow(learningConfigurationData, this::startLearningCallback, inputData.length);
+                new LearningConfiguratorWindow(
+                        learningConfigurationData,
+                        this::startLearningCallback,
+                        inputsAndTargets.getInputs().length
+                );
             } else {
-                new LearningConfiguratorWindow(this::startLearningCallback, inputData.length);
+                new LearningConfiguratorWindow(this::startLearningCallback, inputsAndTargets.getInputs().length);
             }
         }
     }
@@ -314,8 +299,8 @@ public class NetworkWindow extends JFrame {
                 !previousCrossValidationGroupsCount.equals(c.crossValidationGroupsCount().orElse(1))) {
             previousCrossValidationGroupsCount = c.crossValidationGroupsCount().orElse(1);
             var dataProvider = c.crossValidationGroupsCount()
-                    .map(groupsCount -> (DataProvider) new CrossValidationDataProvider(inputData, outputData, groupsCount))
-                    .orElse(new SimpleDataProvider(inputData, outputData));
+                    .map(groupsCount -> (DataProvider) new CrossValidationDataProvider(inputsAndTargets.getInputs(), inputsAndTargets.getTargets(), groupsCount))
+                    .orElse(new SimpleDataProvider(inputsAndTargets.getInputs(), inputsAndTargets.getTargets()));
             if (learningSupervisor == null) {
                 learningSupervisor = new LearningSupervisor(neuralNetwork, dataProvider);
             } else {
@@ -325,7 +310,7 @@ public class NetworkWindow extends JFrame {
         learningConfigurationData = c;
 
         learningConfiguration = new LearningSupervisor.Configuration(
-                new SumSquaredErrorFunction(),
+                errorFunction,
                 new BackPropagationLearningFunction(learningConfigurationData.learningRate())
         ).setUpdateCallback(s -> learningUpdateCallback(s, false))
                 .setEpochBatchSize(learningConfigurationData.epochBatchSize());
@@ -387,7 +372,7 @@ public class NetworkWindow extends JFrame {
     }
 
     private void onTestNetwork() {
-        new NetworkTesterWindow(neuralNetwork);
+        new NetworkTestTypeConfiguratorWindow(neuralNetwork, inputsAndTargets, errorFunction);
     }
 
     private void onShowStatistics() {
@@ -416,7 +401,7 @@ public class NetworkWindow extends JFrame {
         importNetworkButton.setEnabled(learningFuture == null || learningFuture.isDone());
         exportNetworkButton.setEnabled(neuralNetwork != null && (learningFuture == null || learningFuture.isDone()));
         importDataButton.setEnabled(neuralNetwork != null && (learningFuture == null || learningFuture.isDone()));
-        startLearningButton.setEnabled(neuralNetwork != null && inputData != null && outputData != null && (learningFuture == null || learningFuture.isDone()));
+        startLearningButton.setEnabled(neuralNetwork != null && inputsAndTargets != null && (learningFuture == null || learningFuture.isDone()));
         pauseLearningButton.setEnabled(learningFuture != null && !learningFuture.isDone());
         resumeLearningButton.setEnabled(learningFuture != null && learningFuture.isCancelled());
         testNetworkButton.setEnabled(neuralNetwork != null && (learningFuture == null || learningFuture.isDone()));
@@ -431,7 +416,7 @@ public class NetworkWindow extends JFrame {
                 var label = new JLabel("Missing neural network");
                 label.setForeground(Color.red);
                 topInfoPanel1.add(label);
-            } else if (inputData == null || outputData == null) {
+            } else if (inputsAndTargets == null) {
                 var label = new JLabel("Missing learning data");
                 label.setForeground(Color.red);
                 topInfoPanel1.add(label);

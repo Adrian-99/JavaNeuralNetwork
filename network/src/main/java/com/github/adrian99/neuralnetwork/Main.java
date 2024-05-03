@@ -91,9 +91,9 @@ public class Main {
         System.out.println("END");
         printStats(stats);
 
-        try (var objectOutputStream = new ObjectOutputStream(new FileOutputStream("network-learned"))) {
-            objectOutputStream.writeObject(network);
-        }
+//        try (var objectOutputStream = new ObjectOutputStream(new FileOutputStream("network-learned"))) {
+//            objectOutputStream.writeObject(network);
+//        }
 
 //        printArray2D(outputs);
     }

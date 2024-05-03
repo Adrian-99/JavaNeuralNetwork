@@ -12,16 +12,16 @@ import java.util.List;
 import static com.github.adrian99.neuralnetworkgui.util.GridBagLayoutCreator.addComponent;
 import static com.github.adrian99.neuralnetworkgui.util.GridBagLayoutCreator.addInputWithLabel;
 
-public class NetworkTesterWindow extends JDialog {
+public class NetworkManualTesterWindow extends JDialog {
     private final NeuralNetwork neuralNetwork;
     private final List<JSpinner> networkInputsInputs;
     private final List<JLabel> networkOutputsLabels;
     private boolean areOutputsCalculated = false;
 
-    public NetworkTesterWindow(NeuralNetwork neuralNetwork) {
+    public NetworkManualTesterWindow(NeuralNetwork neuralNetwork) {
         this.neuralNetwork = neuralNetwork;
 
-        setTitle("Test neural network");
+        setTitle("Manual test of neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);
 

@@ -8,14 +8,18 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class PlotWindow extends JDialog {
-    public PlotWindow(String xAxisValue, String yAxisValue, XYDataset data) {
-        setTitle("Statistics plot - " + yAxisValue + " by " + xAxisValue);
+    public PlotWindow(String xAxisValue, String yAxisValue, XYDataset dataset) {
+        this(null, xAxisValue, yAxisValue, dataset);
+    }
+
+    public PlotWindow(String title, String xAxisValue, String yAxisValue, XYDataset data) {
+        setTitle(title != null ? title : "Statistics plot - " + yAxisValue + " by " + xAxisValue);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);
 
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        var plot = ChartFactory.createXYLineChart(yAxisValue + " by " + xAxisValue, xAxisValue, yAxisValue, data);
+        var plot = ChartFactory.createXYLineChart(title != null ? title : yAxisValue + " by " + xAxisValue, xAxisValue, yAxisValue, data);
         getContentPane().add(new ChartPanel(plot));
 
         pack();

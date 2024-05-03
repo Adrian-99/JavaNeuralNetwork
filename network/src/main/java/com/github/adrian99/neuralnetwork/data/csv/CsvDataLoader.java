@@ -43,7 +43,7 @@ public class CsvDataLoader {
                 columnIndex,
                 columns.get(columnIndex)
                         .stream()
-                        .map(valuesMap::get)
+                        .map(value -> valuesMap.getOrDefault(value, value))
                         .toList()
         );
         return this;
