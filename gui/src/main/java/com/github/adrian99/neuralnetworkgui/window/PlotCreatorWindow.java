@@ -87,19 +87,21 @@ public class PlotCreatorWindow extends JDialog {
             for (var s : statisticsCollector.getStatistics()) {
                 var x = getValue(s, xAxis);
                 var y = getValue(s, yAxis);
-                nextYCount++;
-                if (nextYValue == null) {
-                    nextYValue = y;
-                } else if (yAxis.equals(ACCURACY) || yAxis.equals(ERROR)) {
-                    nextYValue = (nextYValue * (nextYCount - 1) + y) / nextYCount;
-                } else if (y > nextYValue) {
-                    nextYValue = y;
-                }
-                if (x - previousX >= xAxisMinStep) {
-                    series.add(x, nextYValue);
-                    nextYValue = null;
-                    nextYCount = 0;
-                    previousX = x;
+                if (Double.isFinite(x) && Double.isFinite(y)) {
+                    nextYCount++;
+                    if (nextYValue == null) {
+                        nextYValue = y;
+                    } else if (yAxis.equals(ACCURACY) || yAxis.equals(ERROR)) {
+                        nextYValue = (nextYValue * (nextYCount - 1) + y) / nextYCount;
+                    } else if (y > nextYValue) {
+                        nextYValue = y;
+                    }
+                    if (x - previousX >= xAxisMinStep) {
+                        series.add(x, nextYValue);
+                        nextYValue = null;
+                        nextYCount = 0;
+                        previousX = x;
+                    }
                 }
             }
             new PlotWindow(xAxis, yAxis, new XYSeriesCollection(series));
