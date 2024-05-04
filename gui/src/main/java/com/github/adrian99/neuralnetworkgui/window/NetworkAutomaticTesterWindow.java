@@ -4,6 +4,7 @@ import com.github.adrian99.neuralnetwork.NeuralNetwork;
 import com.github.adrian99.neuralnetwork.learning.data.InputsAndTargets;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import com.github.adrian99.neuralnetwork.util.Statistics;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -26,6 +27,7 @@ public class NetworkAutomaticTesterWindow extends JDialog {
         var accuracy = Statistics.accuracy(networkOutputs, targetOutputs);
         var error = Statistics.error(networkOutputs, targetOutputs, errorFunction);
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Automatic test of neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

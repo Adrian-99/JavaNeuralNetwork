@@ -2,6 +2,7 @@ package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetworkgui.data.StatisticsRecord;
 import com.github.adrian99.neuralnetworkgui.util.StatisticsCollector;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -29,6 +30,7 @@ public class PlotCreatorWindow extends JDialog {
     public PlotCreatorWindow(StatisticsCollector statisticsCollector) {
         this.statisticsCollector = statisticsCollector;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Learning statistics");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

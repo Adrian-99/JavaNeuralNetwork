@@ -5,6 +5,7 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivat
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.XavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetworkgui.data.NetworkLayerData;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -57,6 +58,7 @@ public class NetworkLayerCreatorWindow extends JDialog {
     public NetworkLayerCreatorWindow(NetworkLayerData networkLayerData, Consumer<NetworkLayerData> onSave) {
         this.onSave = onSave;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Create new neural network layer");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

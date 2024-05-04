@@ -2,6 +2,7 @@ package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetworkgui.data.NetworkData;
 import com.github.adrian99.neuralnetworkgui.data.NetworkLayerData;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -22,6 +23,7 @@ public class NetworkCreatorWindow extends JDialog {
     public NetworkCreatorWindow(Consumer<NetworkData> onDone) {
         this.onDone = onDone;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Create new neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

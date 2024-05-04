@@ -1,6 +1,7 @@
 package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -37,6 +38,7 @@ public class LearningConfiguratorWindow extends JDialog {
                                       int crossValidationGroupsCountMaxLimit) {
         this.onStart = onStart;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Configure learning process");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

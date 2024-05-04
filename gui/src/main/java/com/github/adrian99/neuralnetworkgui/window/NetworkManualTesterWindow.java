@@ -1,6 +1,7 @@
 package com.github.adrian99.neuralnetworkgui.window;
 
 import com.github.adrian99.neuralnetwork.NeuralNetwork;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -21,6 +22,7 @@ public class NetworkManualTesterWindow extends JDialog {
     public NetworkManualTesterWindow(NeuralNetwork neuralNetwork) {
         this.neuralNetwork = neuralNetwork;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Manual test of neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

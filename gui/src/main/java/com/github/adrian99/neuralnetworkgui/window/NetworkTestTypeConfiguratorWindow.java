@@ -4,6 +4,7 @@ import com.github.adrian99.neuralnetwork.NeuralNetwork;
 import com.github.adrian99.neuralnetwork.learning.data.InputsAndTargets;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
 import com.github.adrian99.neuralnetworkgui.util.DataImportUtils;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -19,6 +20,7 @@ public class NetworkTestTypeConfiguratorWindow extends JDialog {
         this.learningData = learningData;
         this.errorFunction = errorFunction;
 
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Type of test of neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setModalityType(ModalityType.APPLICATION_MODAL);

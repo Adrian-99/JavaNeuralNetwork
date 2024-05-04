@@ -25,6 +25,7 @@ import com.github.adrian99.neuralnetworkgui.component.NeuronVisualizerComponent;
 import com.github.adrian99.neuralnetworkgui.data.LearningConfigurationData;
 import com.github.adrian99.neuralnetworkgui.util.DataImportUtils;
 import com.github.adrian99.neuralnetworkgui.util.StatisticsCollector;
+import com.github.adrian99.neuralnetworkgui.util.WindowUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -75,6 +76,7 @@ public class NetworkWindow extends JFrame {
     private transient StatisticsCollector statisticsCollector;
 
     public NetworkWindow() {
+        setIconImage(WindowUtils.getIconImage());
         setTitle("Neural network");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
@@ -151,7 +153,7 @@ public class NetworkWindow extends JFrame {
         bottomInfoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         getContentPane().add(bottomInfoPanel, BorderLayout.SOUTH);
 
-        var valueLabelsDimension = new Dimension(50, 20);
+        var valueLabelsDimension = new Dimension(70, 20);
         bottomEpochsLabel = new JLabel();
         bottomEpochsLabel.setPreferredSize(valueLabelsDimension);
         bottomEpochsLabel.setHorizontalAlignment(SwingConstants.RIGHT);
