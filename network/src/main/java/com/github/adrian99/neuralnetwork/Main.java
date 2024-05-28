@@ -5,22 +5,14 @@ import com.github.adrian99.neuralnetwork.layer.neuron.activation.LinearActivatio
 import com.github.adrian99.neuralnetwork.layer.neuron.activation.LogisticActivationFunction;
 import com.github.adrian99.neuralnetwork.layer.neuron.weightinitialization.NormalizedXavierWeightInitializationFunction;
 import com.github.adrian99.neuralnetwork.learning.BackPropagationLearningFunction;
-import com.github.adrian99.neuralnetwork.learning.data.CrossValidationDataProvider;
 import com.github.adrian99.neuralnetwork.learning.data.SimpleDataProvider;
-import com.github.adrian99.neuralnetwork.learning.endcondition.AccuracyEndCondition;
-import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
-import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
-import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
-import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
+import com.github.adrian99.neuralnetwork.learning.error.MeanSquaredErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
-import com.github.adrian99.neuralnetwork.util.Statistics;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Map;
@@ -72,7 +64,7 @@ public class Main {
                 .addLayer(2, new LogisticActivationFunction(5), weightInitializationFunction)
                 .addOutputLayer(new LinearActivationFunction(0.5), weightInitializationFunction);
 
-        var errorFunction = new SumSquaredErrorFunction();
+        var errorFunction = new MeanSquaredErrorFunction();
         var learningFunction = new BackPropagationLearningFunction(1.5);
 
 //        var dataProvider = new CrossValidationDataProvider(inputs, target, 10);

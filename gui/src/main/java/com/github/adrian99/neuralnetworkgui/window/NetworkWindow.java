@@ -17,7 +17,7 @@ import com.github.adrian99.neuralnetwork.learning.endcondition.EpochsCountEndCon
 import com.github.adrian99.neuralnetwork.learning.endcondition.ErrorEndCondition;
 import com.github.adrian99.neuralnetwork.learning.endcondition.TimeEndCondition;
 import com.github.adrian99.neuralnetwork.learning.error.ErrorFunction;
-import com.github.adrian99.neuralnetwork.learning.error.SumSquaredErrorFunction;
+import com.github.adrian99.neuralnetwork.learning.error.MeanSquaredErrorFunction;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningStatisticsProvider;
 import com.github.adrian99.neuralnetwork.learning.supervisor.LearningSupervisor;
 import com.github.adrian99.neuralnetworkgui.component.NetworkVisualizerComponent;
@@ -61,7 +61,7 @@ public class NetworkWindow extends JFrame {
     private final JLabel bottomAccuracyLabel;
     private final JLabel bottomErrorLabel;
     private final JFileChooser fileChooser = new JFileChooser();
-    private final transient ErrorFunction errorFunction = new SumSquaredErrorFunction();
+    private final transient ErrorFunction errorFunction = new MeanSquaredErrorFunction();
 
     private NeuralNetwork neuralNetwork = null;
     private NeuronVisualizerComponent neuronVisualizerComponent = null;

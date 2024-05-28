@@ -7,6 +7,9 @@ public abstract class DataProvider {
     protected final double[][] inputs;
     protected final int[][] targets;
 
+    protected double accuracy = 0;
+    protected double error = Double.MAX_VALUE;
+
     protected DataProvider(double[][] inputs, int[][] targets) {
         if (inputs.length == targets.length) {
             this.inputs = inputs;
@@ -16,8 +19,14 @@ public abstract class DataProvider {
         }
     }
 
+    public double getAccuracy() {
+        return accuracy;
+    }
+
+    public double getError() {
+        return error;
+    }
+
     public abstract InputsAndTargets getLearningData();
     public abstract void performValidation(NeuralNetwork neuralNetwork, ErrorFunction errorFunction);
-    public abstract double getAccuracy();
-    public abstract double getError();
 }

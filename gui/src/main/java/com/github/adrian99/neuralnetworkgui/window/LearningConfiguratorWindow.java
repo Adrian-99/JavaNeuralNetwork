@@ -47,7 +47,7 @@ public class LearningConfiguratorWindow extends JDialog {
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
         displayRefreshRateInput = new JSpinner(new SpinnerNumberModel(configuration.displayRefreshRate(), 0.1, 60, 0.1));
-        epochsBatchSizeInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 1000000, 1));
+        epochsBatchSizeInput = new JSpinner(new SpinnerNumberModel(configuration.epochBatchSize(), 1, 100000000, 1));
         learningRateInput = new JSpinner(new SpinnerNumberModel(configuration.learningRate(), -10000, 10000, 0.001));
         collectStatisticsCheckbox = new JCheckBox("Collect statistics", configuration.collectStatistics());
 
@@ -60,7 +60,7 @@ public class LearningConfiguratorWindow extends JDialog {
         desiredAccuracyInput = new JSpinner(new SpinnerNumberModel(configuration.accuracyEndConditionValue().orElse(0.8).doubleValue(), 0, 1, 0.001));
         epochsCountEndConditionCheckbox = new JCheckBox("Enable epochs count end condition", configuration.epochsCountEndConditionValue().isPresent());
         epochsCountEndConditionCheckbox.addItemListener(i -> drawForm());
-        desiredEpochsCountInput = new JSpinner(new SpinnerNumberModel(configuration.epochsCountEndConditionValue().orElse(1000).intValue(), 1, 1000000000, 1));
+        desiredEpochsCountInput = new JSpinner(new SpinnerNumberModel(configuration.epochsCountEndConditionValue().orElse(1000).intValue(), 1, Integer.MAX_VALUE, 1));
         errorEndConditionCheckbox = new JCheckBox("Enable error end condition", configuration.errorEndConditionValue().isPresent());
         errorEndConditionCheckbox.addItemListener(i -> drawForm());
         desiredErrorInput = new JSpinner(new SpinnerNumberModel(configuration.errorEndConditionValue().orElse(0.2).doubleValue(), 0, 1000000, 0.001));

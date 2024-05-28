@@ -14,8 +14,6 @@ public class CrossValidationDataProvider extends DataProvider {
     private final List<Set<Integer>> groupsIndexes;
     private final List<Double> accuracyBuffer;
     private final List<Double> errorBuffer;
-    private double accuracy = 0.0;
-    private double error = Double.MAX_VALUE;
     private int currentValidationGroupIndex;
     private InputsAndTargets currentValidationData;
 
@@ -71,20 +69,10 @@ public class CrossValidationDataProvider extends DataProvider {
         if (currentValidationGroupIndex >= groupsCount) {
             accuracy = accuracyBuffer.stream().mapToDouble(Double::doubleValue).average().orElse(0);
             accuracyBuffer.clear();
-            error = errorBuffer.stream().mapToDouble(Double::doubleValue).average().orElse(Double.MAX_VALUE);
+            error = errorBuffer.stream().mapToDouble(Double::doubleValue).sum();
             errorBuffer.clear();
             calculateNewGroups();
         }
-    }
-
-    @Override
-    public double getAccuracy() {
-        return accuracy;
-    }
-
-    @Override
-    public double getError() {
-        return error;
     }
 
     private void calculateNewGroups() {
